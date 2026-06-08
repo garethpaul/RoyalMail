@@ -43,8 +43,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `make verify` runs Python 2 syntax checks and unit tests for message
-  composition and manager setup.
+- `make verify` runs Python 2 syntax checks and unit tests for plain text, HTML,
+  attachment, envelope, and manager behavior.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

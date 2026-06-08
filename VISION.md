@@ -21,7 +21,6 @@ Priority:
 
 Next priorities:
 
-- Add tests for plain text, HTML, attachments, CC, and BCC handling
 - Document supported Python versions and TLS expectations
 - Validate attachment paths and MIME type handling
 - Return clearer errors for SMTP failures
