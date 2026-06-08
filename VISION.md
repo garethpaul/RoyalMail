@@ -45,3 +45,6 @@ configuration, and should keep BCC handling correct.
 - Hidden bulk-mail behavior
 - Logging full message bodies by default
 - Transport-security downgrades without explicit rationale
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
