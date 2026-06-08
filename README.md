@@ -1,5 +1,8 @@
 # RoyalMail
 
+<!-- README-OVERVIEW-IMAGE -->
+![Project overview](docs/readme-overview.svg)
+
 ## Overview
 
 `garethpaul/RoyalMail` is a public sample, documentation, or utility project. Simple python mailer that sits on SMTPLIB
@@ -68,4 +71,3 @@ Keep changes small and tied to the project that is already present in this repos
 Prior README summary:
 
 > RoyalMail <!-- README-OVERVIEW-IMAGE --> RoyalMail ========= Simple python mailer that sits on SMTPLIB
-
