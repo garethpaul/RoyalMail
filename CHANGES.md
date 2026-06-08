@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added `make check` as the shared repository verification alias.
 - Added Python 2 unit tests for manager setup and BCC envelope behavior.
 - Fixed `Manager()` default sender construction when no sender instance is
   injected.
