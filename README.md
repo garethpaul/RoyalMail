@@ -70,4 +70,4 @@ Keep changes small and tied to the project that is already present in this repos
 
 Prior README summary:
 
-> RoyalMail <!-- README-OVERVIEW-IMAGE --> RoyalMail ========= Simple python mailer that sits on SMTPLIB
+> RoyalMail RoyalMail ========= Simple python mailer that sits on SMTPLIB
