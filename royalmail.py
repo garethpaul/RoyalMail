@@ -339,7 +339,8 @@ class Manager(threading.Thread):
         self._result_lock = threading.RLock()
 
         if self.RoyalMail is None:
-            self.RoyalMail = RoyalMail(
+            sender_cls = globals()['RoyalMail']
+            self.RoyalMail = sender_cls(
                 host=kwargs.get('host', 'localhost'),
                 port=kwargs.get('port', 25),
                 use_tls=kwargs.get('use_tls', False),
