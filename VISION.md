@@ -17,6 +17,7 @@ Priority:
 - Preserve the `RoyalMail` sender and `Message` composition API
 - Keep SMTP credentials caller-provided and out of source control
 - Maintain attachment and multipart message behavior
+- Keep SMTP connections closed on send or login failures
 - Keep completed maintenance plans under `docs/plans`
 - Treat Python 2 compatibility code as legacy context
 

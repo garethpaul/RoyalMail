@@ -2,6 +2,8 @@
 
 ## 2026-06-08
 
+- Ensured SMTP connections are quit when sending or login fails, with Python 2
+  regression coverage.
 - Added `make check` as the shared repository verification alias.
 - Added Python 2 unit tests for manager setup and BCC envelope behavior.
 - Fixed `Manager()` default sender construction when no sender instance is

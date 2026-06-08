@@ -14,6 +14,22 @@ class FakeServer(object):
         self.calls.append((sender, recipients, payload))
 
 
+class FailingSMTP(object):
+    instances = []
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.quit_called = False
+        FailingSMTP.instances.append(self)
+
+    def sendmail(self, sender, recipients, payload):
+        raise RuntimeError('smtp send failed')
+
+    def quit(self):
+        self.quit_called = True
+
+
 class RoyalMailTests(unittest.TestCase):
     def test_plain_text_message_headers_and_body(self):
         message = royalmail.Message(
@@ -122,6 +138,26 @@ class RoyalMailTests(unittest.TestCase):
         self.assertIn('CC: cc@example.com', payload)
         self.assertNotIn('BCC:', payload)
         self.assertNotIn('bcc@example.com', payload)
+
+    def test_send_quits_smtp_connection_when_sendmail_fails(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        FailingSMTP.instances = []
+        royalmail.smtplib.SMTP = FailingSMTP
+
+        try:
+            with self.assertRaises(RuntimeError):
+                royalmail.RoyalMail('smtp.example.com', 2525).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual(1, len(FailingSMTP.instances))
+        self.assertTrue(FailingSMTP.instances[0].quit_called)
 
 
 if __name__ == '__main__':

@@ -51,7 +51,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 ## Testing and Verification
 
 - `make check` runs Python 2 syntax checks and unit tests for plain text, HTML,
-  attachment, envelope, and manager behavior.
+  attachment, envelope, SMTP cleanup, and manager behavior.
 - `make check` also requires completed canonical plans under `docs/plans`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -72,6 +72,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `VISION.md` for project direction and contribution guardrails.
 - See `docs/plans/2026-06-08-royalmail-baseline.md` for the canonical Python 2
   message-composition verification baseline.
+- See `docs/plans/2026-06-08-smtp-cleanup-on-failure.md` for the SMTP cleanup
+  regression baseline.
 
 ## Contributing
 

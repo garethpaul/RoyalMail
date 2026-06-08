@@ -89,22 +89,23 @@ class RoyalMail(object):
         """
         server = smtplib.SMTP(self.host, self.port)
 
-        if self._usr and self._pwd:
-            if self.use_tls is True:
-                server.ehlo()
-                server.starttls()
-                server.ehlo()
-
-            server.login(self._usr, self._pwd)
-
         try:
-            num_msgs = len(msg)
-            for m in msg:
-                self._send(server, m)
-        except TypeError:
-            self._send(server, msg)
+            if self._usr and self._pwd:
+                if self.use_tls is True:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
 
-        server.quit()
+                server.login(self._usr, self._pwd)
+
+            try:
+                num_msgs = len(msg)
+                for m in msg:
+                    self._send(server, m)
+            except TypeError:
+                self._send(server, msg)
+        finally:
+            server.quit()
 
     def _send(self, server, msg):
         """
