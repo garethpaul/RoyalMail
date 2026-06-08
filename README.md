@@ -12,6 +12,13 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 ## Repository Contents
 
 - `README.md` - project overview and local usage notes
+- `CHANGES.md` - maintenance history for test and verification coverage
+- `Makefile` - local verification entry points
+- `docs/plans` - completed maintenance plans for the current baseline
+- `plans` - historical implementation notes
+- `scripts` - documentation-plan validators
+- `tests` - Python 2 unit tests for email composition and sender behavior
+- `royalmail.py` - email composition and SMTP sender implementation
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
 
@@ -20,7 +27,7 @@ Additional scan context:
 - Source directories: no top-level source directories detected
 - Dependency and build manifests: none detected
 - Entry points or build surfaces: none detected
-- Test-looking files: no obvious test files detected
+- Test-looking files: tests/test_royalmail.py
 
 ## Getting Started
 
@@ -45,6 +52,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `make check` runs Python 2 syntax checks and unit tests for plain text, HTML,
   attachment, envelope, and manager behavior.
+- `make check` also requires completed canonical plans under `docs/plans`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -62,6 +70,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `docs/plans/2026-06-08-royalmail-baseline.md` for the canonical Python 2
+  message-composition verification baseline.
 
 ## Contributing
 
