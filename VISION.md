@@ -39,7 +39,7 @@ Email helpers can expose credentials, recipients, and message contents. The
 library should avoid logging sensitive fields, should support secure transport
 configuration, and should keep BCC handling correct.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Checked-in credentials or real recipient lists
 - Hidden bulk-mail behavior
