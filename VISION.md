@@ -18,6 +18,7 @@ Priority:
 - Keep SMTP credentials caller-provided and out of source control
 - Maintain attachment and multipart message behavior
 - Keep constructor attachment tuples aligned with `attach()` mimetype support
+- Validate explicit attachment mimetypes before MIME construction
 - Keep attachment file handles closed on MIME construction failures
 - Keep SMTP connections closed on send or login failures
 - Reject newline characters in message headers and SMTP envelope addresses

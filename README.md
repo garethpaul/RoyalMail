@@ -55,7 +55,7 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   behavior, including no-argument sender exception recording and attachment
   file cleanup when MIME construction fails. Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
-  newline rejection.
+  newline rejection, plus explicit attachment mimetype validation.
 - `make check` also requires completed canonical plans under `docs/plans`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -88,6 +88,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   attachment mimetype tuple coverage.
 - See `docs/plans/2026-06-09-attachment-content-id-header-guard.md` for
   attachment Content-ID newline rejection.
+- See `docs/plans/2026-06-09-attachment-mimetype-guard.md` for explicit
+  attachment mimetype validation.
 
 ## Contributing
 

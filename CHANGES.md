@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Rejected malformed or newline-bearing explicit attachment mimetypes before
+  MIME construction, with Python 2 regression coverage.
 - Accepted constructor-supplied `(filename, cid, mimetype)` attachment tuples
   and added Python 2 regression coverage.
 - Closed attachment file handles before MIME construction can fail and added a

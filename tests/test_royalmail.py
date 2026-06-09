@@ -256,6 +256,34 @@ class RoyalMailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             message.as_string()
 
+    def test_rejects_newlines_in_attachment_mimetype(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+            attachments=[
+                ('missing.txt', None, 'text/plain\nContent-Disposition: inline'),
+            ],
+        )
+
+        with self.assertRaises(ValueError):
+            message.as_string()
+
+    def test_rejects_malformed_attachment_mimetype(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+            attachments=[
+                ('missing.txt', None, 'text'),
+            ],
+        )
+
+        with self.assertRaises(ValueError):
+            message.as_string()
+
     def test_send_quits_smtp_connection_when_sendmail_fails(self):
         message = royalmail.Message(
             To='to@example.com',

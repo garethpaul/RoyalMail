@@ -254,6 +254,16 @@ class Message(object):
     def _safe_header_values(self, name, values):
         return [self._safe_header_value(name, value) for value in values]
 
+    def _safe_mimetype(self, mimetype):
+        if not isinstance(mimetype, basestring):
+            raise ValueError('Attachment mimetype must be a string')
+        if '\n' in mimetype or '\r' in mimetype:
+            raise ValueError('Attachment mimetype must not contain newlines')
+        parts = mimetype.split('/')
+        if len(parts) != 2 or not parts[0] or not parts[1]:
+            raise ValueError('Attachment mimetype must use maintype/subtype')
+        return mimetype
+
     def _multipart(self):
         """The email has attachments"""
 
@@ -289,8 +299,8 @@ class Message(object):
         if cid:
             cid = self._safe_header_value('Content-ID', cid)
 
-        if mimetype:
-            ctype = mimetype
+        if mimetype is not None:
+            ctype = self._safe_mimetype(mimetype)
             encoding = None
         else:
             ctype, encoding = mimetypes.guess_type(filename)
