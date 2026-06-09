@@ -242,6 +242,20 @@ class RoyalMailTests(unittest.TestCase):
 
         self.assertEqual([], server.calls)
 
+    def test_rejects_newlines_in_attachment_content_id(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+            attachments=[
+                ('missing.txt', 'image-cid\nBCC: injected@example.com', 'text/plain'),
+            ],
+        )
+
+        with self.assertRaises(ValueError):
+            message.as_string()
+
     def test_send_quits_smtp_connection_when_sendmail_fails(self):
         message = royalmail.Message(
             To='to@example.com',

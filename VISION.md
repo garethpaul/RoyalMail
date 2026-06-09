@@ -21,6 +21,7 @@ Priority:
 - Keep attachment file handles closed on MIME construction failures
 - Keep SMTP connections closed on send or login failures
 - Reject newline characters in message headers and SMTP envelope addresses
+- Reject newline characters in attachment Content-ID headers
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`
 - Treat Python 2 compatibility code as legacy context

@@ -6,6 +6,8 @@
   and added Python 2 regression coverage.
 - Closed attachment file handles before MIME construction can fail and added a
   Python 2 regression test for the cleanup path.
+- Rejected newline characters in attachment Content-ID values before MIME header
+  serialization, with Python 2 regression coverage.
 - Fixed `Manager.run()` so no-argument sender exceptions are recorded as
   failed message results instead of crashing the manager error handler.
 - Added newline validation for message headers and SMTP envelope addresses to

@@ -286,6 +286,9 @@ class Message(object):
         """
         If mimetype is None, it will try to guess the mimetype
         """
+        if cid:
+            cid = self._safe_header_value('Content-ID', cid)
+
         if mimetype:
             ctype = mimetype
             encoding = None

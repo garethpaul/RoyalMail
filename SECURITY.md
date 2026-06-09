@@ -34,9 +34,9 @@ Helpful reports include:
 
 For web services, APIs, sockets, or scraping workflows, prioritize reports involving authentication bypass, authorization errors, injection, server-side request forgery, unsafe deserialization, credential leakage, data exposure, or denial-of-service conditions. Use test accounts and minimal proof-of-concept traffic only.
 
-Message headers and SMTP envelope addresses should reject carriage returns and
-line feeds so untrusted values cannot inject additional email headers or
-recipients.
+Message headers, SMTP envelope addresses, and attachment Content-ID headers
+should reject carriage returns and line feeds so untrusted values cannot inject
+additional email headers or recipients.
 
 ## Dependency and Supply Chain Security
 
