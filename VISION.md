@@ -26,6 +26,7 @@ Priority:
 - Reject newline characters in attachment Content-ID headers
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`
+- Keep verification runs from leaving Python bytecode in the checkout
 - Treat Python 2 compatibility code as legacy context
 
 Next priorities:

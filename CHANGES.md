@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Kept Python verification bytecode-free and added checker coverage to reject
+  generated `.pyc` and `.pyo` files.
 - Started TLS whenever `use_tls=True`, including unauthenticated SMTP sends,
   with Python 2 regression coverage.
 - Rejected malformed or newline-bearing explicit attachment mimetypes before

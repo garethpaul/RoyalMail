@@ -58,6 +58,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   newline rejection, explicit attachment mimetype validation, and TLS startup
   when `use_tls=True` without login credentials.
 - `make check` also requires completed canonical plans under `docs/plans`.
+- `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
+  files are present in the checkout.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -93,6 +95,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   attachment mimetype validation.
 - See `docs/plans/2026-06-09-unauthenticated-tls-start.md` for the
   unauthenticated STARTTLS regression guard.
+- See `docs/plans/2026-06-09-bytecode-free-verification.md` for the
+  bytecode-free verification guard.
 
 ## Contributing
 

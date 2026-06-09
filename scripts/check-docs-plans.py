@@ -9,6 +9,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 DOCS_PLANS = os.path.join(ROOT, 'docs', 'plans')
 CANONICAL_PLAN = os.path.join(DOCS_PLANS, '2026-06-08-royalmail-baseline.md')
+BYTECODE_PLAN = os.path.join(DOCS_PLANS, '2026-06-09-bytecode-free-verification.md')
 
 
 def rel(path):
@@ -25,6 +26,9 @@ failures = []
 if not os.path.isfile(CANONICAL_PLAN):
     failures.append('%s is missing' % rel(CANONICAL_PLAN))
 
+if not os.path.isfile(BYTECODE_PLAN):
+    failures.append('%s is missing' % rel(BYTECODE_PLAN))
+
 plans = sorted(glob.glob(os.path.join(DOCS_PLANS, '*.md')))
 if not plans:
     failures.append('docs/plans must contain at least one completed plan')
@@ -33,6 +37,17 @@ for plan_path in plans:
     plan = read(plan_path)
     if 'Status: Completed' not in plan or 'make check' not in plan:
         failures.append('%s must record completed status and make check verification' % rel(plan_path))
+
+bytecode_files = []
+for dirpath, dirnames, filenames in os.walk(ROOT):
+    if '.git' in dirnames:
+        dirnames.remove('.git')
+    for filename in filenames:
+        if filename.endswith(('.pyc', '.pyo')):
+            bytecode_files.append(rel(os.path.join(dirpath, filename)))
+
+if bytecode_files:
+    failures.append('Python bytecode must not be present: %s' % ', '.join(sorted(bytecode_files)))
 
 if failures:
     print('Documentation plan checks failed:\n- %s' % '\n- '.join(failures), file=sys.stderr)
