@@ -30,6 +30,11 @@ class FailingSMTP(object):
         self.quit_called = True
 
 
+class NoArgFailingSender(object):
+    def send(self, message):
+        raise RuntimeError()
+
+
 class RoyalMailTests(unittest.TestCase):
     def test_plain_text_message_headers_and_body(self):
         message = royalmail.Message(
@@ -184,6 +189,29 @@ class RoyalMailTests(unittest.TestCase):
 
         self.assertEqual(1, len(FailingSMTP.instances))
         self.assertTrue(FailingSMTP.instances[0].quit_called)
+
+    def test_manager_records_no_arg_send_exception(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        callbacks = []
+        manager = royalmail.Manager(
+            RoyalMail=NoArgFailingSender(),
+            callback=callbacks.append,
+        )
+        manager.queue.put(message)
+        manager.queue.put(None)
+
+        manager.run()
+
+        self.assertEqual(
+            (False, -1, 'RuntimeError'),
+            manager.results[message.message_id],
+        )
+        self.assertEqual([message.message_id], callbacks)
 
 
 if __name__ == '__main__':

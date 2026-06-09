@@ -384,11 +384,14 @@ class Manager(threading.Thread):
                     self.results[m.message_id] = (True, 0, '')
 
                 except Exception as e:
-                    args = e.args
-                    if len(args) < 2:
-                        args = (-1, e.args[0])
+                    if len(e.args) >= 2:
+                        err_code, err_message = e.args[0], e.args[1]
+                    elif len(e.args) == 1:
+                        err_code, err_message = -1, e.args[0]
+                    else:
+                        err_code, err_message = -1, e.__class__.__name__
 
-                    self.results[m.message_id] = (False, args[0], args[1])
+                    self.results[m.message_id] = (False, err_code, err_message)
 
                 if self.callback:
                     try:

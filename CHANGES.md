@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Fixed `Manager.run()` so no-argument sender exceptions are recorded as
+  failed message results instead of crashing the manager error handler.
 - Added newline validation for message headers and SMTP envelope addresses to
   prevent header or recipient injection, with Python 2 regression coverage.
 
