@@ -163,11 +163,16 @@ class Message(object):
                     self.attachments.append((attachment, None, None))
                 else:
                     try:
-                        filename, cid = attachment
-                    except (TypeError, IndexError):
-                        self.attachments.append((attachment, None, None))
+                        filename, cid, mimetype = attachment
+                    except (TypeError, ValueError):
+                        try:
+                            filename, cid = attachment
+                        except (TypeError, ValueError):
+                            self.attachments.append((attachment, None, None))
+                        else:
+                            self.attachments.append((filename, cid, None))
                     else:
-                        self.attachments.append((filename, cid, None))
+                        self.attachments.append((filename, cid, mimetype))
         self.To = To
         self.CC = CC
         self.BCC = BCC

@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Accepted constructor-supplied `(filename, cid, mimetype)` attachment tuples
+  and added Python 2 regression coverage.
 - Closed attachment file handles before MIME construction can fail and added a
   Python 2 regression test for the cleanup path.
 - Fixed `Manager.run()` so no-argument sender exceptions are recorded as

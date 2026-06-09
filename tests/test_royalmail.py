@@ -116,6 +116,30 @@ class RoyalMailTests(unittest.TestCase):
                 os.close(fd)
             os.remove(attachment_path)
 
+    def test_constructor_attachment_tuple_accepts_mimetype(self):
+        fd, attachment_path = tempfile.mkstemp(suffix='.royalmail')
+        try:
+            os.write(fd, 'attachment body')
+            os.close(fd)
+            fd = None
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Plain body',
+                attachments=[(attachment_path, None, 'text/plain')],
+            )
+
+            parsed = message_from_string(message.as_string())
+            attachment = parsed.get_payload()[1]
+
+            self.assertEqual('text/plain', attachment.get_content_type())
+            self.assertEqual(os.path.basename(attachment_path), attachment.get_filename())
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.remove(attachment_path)
+
     def test_attachment_file_is_closed_when_mime_creation_fails(self):
         tracking_file = TrackingFile()
         original_mimebase = royalmail.MIMEBase
