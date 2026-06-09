@@ -292,19 +292,23 @@ class Message(object):
             ctype = 'application/octet-stream'
         maintype, subtype = ctype.split('/', 1)
         fp = open(filename, 'rb')
+        try:
+            payload = fp.read()
+        finally:
+            fp.close()
+
         if maintype == 'text':
             # Note: we should handle calculating the charset
-            msg = MIMEText(fp.read(), _subtype=subtype)
+            msg = MIMEText(payload, _subtype=subtype)
         elif maintype == 'image':
-            msg = MIMEImage(fp.read(), _subtype=subtype)
+            msg = MIMEImage(payload, _subtype=subtype)
         elif maintype == 'audio':
-            msg = MIMEAudio(fp.read(), _subtype=subtype)
+            msg = MIMEAudio(payload, _subtype=subtype)
         else:
             msg = MIMEBase(maintype, subtype)
-            msg.set_payload(fp.read())
+            msg.set_payload(payload)
             # Encode the payload using Base64
             encoders.encode_base64(msg)
-        fp.close()
 
         # Set the content-ID header
         if cid:

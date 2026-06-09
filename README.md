@@ -52,7 +52,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 - `make check` runs Python 2 syntax checks and unit tests for plain text, HTML,
   attachment, envelope, header-injection rejection, SMTP cleanup, and manager
-  behavior, including no-argument sender exception recording.
+  behavior, including no-argument sender exception recording and attachment
+  file cleanup when MIME construction fails.
 - `make check` also requires completed canonical plans under `docs/plans`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
@@ -79,6 +80,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   and envelope newline guard.
 - See `docs/plans/2026-06-09-manager-no-arg-error.md` for the Manager
   no-argument exception recording guard.
+- See `docs/plans/2026-06-09-attachment-read-cleanup.md` for the attachment
+  file cleanup guard.
 
 ## Contributing
 

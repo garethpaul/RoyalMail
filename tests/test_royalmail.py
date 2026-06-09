@@ -35,6 +35,17 @@ class NoArgFailingSender(object):
         raise RuntimeError()
 
 
+class TrackingFile(object):
+    def __init__(self):
+        self.closed = False
+
+    def read(self):
+        return 'attachment body'
+
+    def close(self):
+        self.closed = True
+
+
 class RoyalMailTests(unittest.TestCase):
     def test_plain_text_message_headers_and_body(self):
         message = royalmail.Message(
@@ -104,6 +115,43 @@ class RoyalMailTests(unittest.TestCase):
             if fd is not None:
                 os.close(fd)
             os.remove(attachment_path)
+
+    def test_attachment_file_is_closed_when_mime_creation_fails(self):
+        tracking_file = TrackingFile()
+        original_mimebase = royalmail.MIMEBase
+        original_open_present = hasattr(royalmail, 'open')
+        original_open = getattr(royalmail, 'open', None)
+
+        def fake_open(filename, mode):
+            self.assertEqual('attachment.bin', filename)
+            self.assertEqual('rb', mode)
+            return tracking_file
+
+        def failing_mimebase(maintype, subtype):
+            raise RuntimeError('mime construction failed')
+
+        royalmail.open = fake_open
+        royalmail.MIMEBase = failing_mimebase
+
+        try:
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+            )
+            message.attach('attachment.bin', mimetype='application/octet-stream')
+
+            with self.assertRaises(RuntimeError):
+                message.as_string()
+        finally:
+            royalmail.MIMEBase = original_mimebase
+            if original_open_present:
+                royalmail.open = original_open
+            else:
+                del royalmail.open
+
+        self.assertTrue(tracking_file.closed)
 
     def test_manager_creates_default_sender_from_kwargs(self):
         manager = royalmail.Manager(
