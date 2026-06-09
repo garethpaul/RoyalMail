@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Started TLS whenever `use_tls=True`, including unauthenticated SMTP sends,
+  with Python 2 regression coverage.
 - Rejected malformed or newline-bearing explicit attachment mimetypes before
   MIME construction, with Python 2 regression coverage.
 - Accepted constructor-supplied `(filename, cid, mimetype)` attachment tuples

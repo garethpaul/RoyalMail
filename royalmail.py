@@ -90,12 +90,12 @@ class RoyalMail(object):
         server = smtplib.SMTP(self.host, self.port)
 
         try:
-            if self._usr and self._pwd:
-                if self.use_tls is True:
-                    server.ehlo()
-                    server.starttls()
-                    server.ehlo()
+            if self.use_tls is True:
+                server.ehlo()
+                server.starttls()
+                server.ehlo()
 
+            if self._usr and self._pwd:
                 server.login(self._usr, self._pwd)
 
             try:

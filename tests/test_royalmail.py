@@ -30,6 +30,31 @@ class FailingSMTP(object):
         self.quit_called = True
 
 
+class TrackingSMTP(object):
+    instances = []
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.calls = []
+        TrackingSMTP.instances.append(self)
+
+    def ehlo(self):
+        self.calls.append('ehlo')
+
+    def starttls(self):
+        self.calls.append('starttls')
+
+    def login(self, usr, pwd):
+        self.calls.append(('login', usr, pwd))
+
+    def sendmail(self, sender, recipients, payload):
+        self.calls.append(('sendmail', sender, recipients, payload))
+
+    def quit(self):
+        self.calls.append('quit')
+
+
 class NoArgFailingSender(object):
     def send(self, message):
         raise RuntimeError()
@@ -303,6 +328,32 @@ class RoyalMailTests(unittest.TestCase):
 
         self.assertEqual(1, len(FailingSMTP.instances))
         self.assertTrue(FailingSMTP.instances[0].quit_called)
+
+    def test_use_tls_starts_tls_without_login_credentials(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        TrackingSMTP.instances = []
+        royalmail.smtplib.SMTP = TrackingSMTP
+
+        try:
+            royalmail.RoyalMail('smtp.example.com', 2525, use_tls=True).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual(1, len(TrackingSMTP.instances))
+        server = TrackingSMTP.instances[0]
+        self.assertEqual(['ehlo', 'starttls', 'ehlo'], server.calls[:3])
+        self.assertEqual('sendmail', server.calls[3][0])
+        self.assertEqual('quit', server.calls[-1])
+        self.assertEqual(
+            [],
+            [call for call in server.calls if isinstance(call, tuple) and call[0] == 'login'],
+        )
 
     def test_manager_records_no_arg_send_exception(self):
         message = royalmail.Message(

@@ -20,6 +20,7 @@ Priority:
 - Keep constructor attachment tuples aligned with `attach()` mimetype support
 - Validate explicit attachment mimetypes before MIME construction
 - Keep attachment file handles closed on MIME construction failures
+- Start TLS whenever callers request `use_tls=True`
 - Keep SMTP connections closed on send or login failures
 - Reject newline characters in message headers and SMTP envelope addresses
 - Reject newline characters in attachment Content-ID headers

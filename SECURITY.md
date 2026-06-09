@@ -39,6 +39,8 @@ should reject carriage returns and line feeds so untrusted values cannot inject
 additional email headers or recipients.
 Explicit attachment mimetypes should also reject malformed values and newline
 characters before MIME headers are constructed.
+When callers request `use_tls=True`, the SMTP connection should start TLS even
+if the relay does not require login credentials.
 
 ## Dependency and Supply Chain Security
 
