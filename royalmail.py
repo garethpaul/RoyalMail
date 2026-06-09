@@ -112,25 +112,25 @@ class RoyalMail(object):
         Sends a single message using the server
         we created in send()
         """
-        me = msg.From
+        me = msg._safe_header_value('From', msg.From)
         if isinstance(msg.To, basestring):
-            to = [msg.To]
+            to = msg._safe_header_values('To', [msg.To])
         else:
-            to = list(msg.To)
+            to = msg._safe_header_values('To', list(msg.To))
 
         cc = []
         if msg.CC:
             if isinstance(msg.CC, basestring):
-                cc = [msg.CC]
+                cc = msg._safe_header_values('CC', [msg.CC])
             else:
-                cc = list(msg.CC)
+                cc = msg._safe_header_values('CC', list(msg.CC))
 
         bcc = []
         if msg.BCC:
             if isinstance(msg.BCC, basestring):
-                bcc = [msg.BCC]
+                bcc = msg._safe_header_values('BCC', [msg.BCC])
             else:
-                bcc = list(msg.BCC)
+                bcc = msg._safe_header_values('BCC', list(msg.BCC))
 
         you = to + cc + bcc
         server.sendmail(me, you, msg.as_string())
@@ -218,28 +218,36 @@ class Message(object):
         return outer
 
     def _set_info(self, msg):
+        subject = self._safe_header_value('Subject', self.Subject)
         if self.charset == 'us-ascii':
-            msg['Subject'] = self.Subject
+            msg['Subject'] = subject
         else:
-            subject = unicode(self.Subject, self.charset)
-            msg['Subject'] = str(make_header([(subject, self.charset)]))
+            msg['Subject'] = str(make_header([(unicode(subject, self.charset), self.charset)]))
 
-        msg['From'] = self.From
+        msg['From'] = self._safe_header_value('From', self.From)
 
         if isinstance(self.To, basestring):
-            msg['To'] = self.To
+            msg['To'] = self._safe_header_value('To', self.To)
         else:
-            self.To = list(self.To)
+            self.To = self._safe_header_values('To', list(self.To))
             msg['To'] = ", ".join(self.To)
 
         if self.CC:
             if isinstance(self.CC, basestring):
-                msg['CC'] = self.CC
+                msg['CC'] = self._safe_header_value('CC', self.CC)
             else:
-                self.CC = list(self.CC)
+                self.CC = self._safe_header_values('CC', list(self.CC))
                 msg['CC'] = ", ".join(self.CC)
 
-        msg['Date'] = self.Date
+        msg['Date'] = self._safe_header_value('Date', self.Date)
+
+    def _safe_header_value(self, name, value):
+        if isinstance(value, basestring) and ('\n' in value or '\r' in value):
+            raise ValueError('%s header must not contain newlines' % name)
+        return value
+
+    def _safe_header_values(self, name, values):
+        return [self._safe_header_value(name, value) for value in values]
 
     def _multipart(self):
         """The email has attachments"""

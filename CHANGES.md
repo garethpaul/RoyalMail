@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-09
+
+- Added newline validation for message headers and SMTP envelope addresses to
+  prevent header or recipient injection, with Python 2 regression coverage.
+
 ## 2026-06-08
 
 - Ensured SMTP connections are quit when sending or login fails, with Python 2

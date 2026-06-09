@@ -139,6 +139,32 @@ class RoyalMailTests(unittest.TestCase):
         self.assertNotIn('BCC:', payload)
         self.assertNotIn('bcc@example.com', payload)
 
+    def test_rejects_newlines_in_message_headers(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject\nBCC: injected@example.com',
+            Body='Body',
+        )
+
+        with self.assertRaises(ValueError):
+            message.as_string()
+
+    def test_rejects_newlines_in_envelope_recipients(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            BCC='bcc@example.com\nRCPT TO: injected@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        server = FakeServer()
+
+        with self.assertRaises(ValueError):
+            royalmail.RoyalMail()._send(server, message)
+
+        self.assertEqual([], server.calls)
+
     def test_send_quits_smtp_connection_when_sendmail_fails(self):
         message = royalmail.Message(
             To='to@example.com',
