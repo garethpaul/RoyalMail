@@ -29,6 +29,8 @@ Helpful reports include:
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
+- GitHub Actions always runs the Python 3 repository-contract guard; only
+  legacy Python 2 syntax and unit-test steps may skip when Python 2 is absent.
 
 ## Service and API Notes
 

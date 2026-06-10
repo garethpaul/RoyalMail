@@ -27,6 +27,8 @@ Priority:
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`
 - Keep verification runs from leaving Python bytecode in the checkout
+- Keep the Python 3 documentation guard running in GitHub Actions even when
+  legacy Python 2 checks are unavailable
 - Treat Python 2 compatibility code as legacy context
 
 Next priorities:

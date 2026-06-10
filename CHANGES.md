@@ -1,5 +1,14 @@
 # Changes
 
+## 2026-06-10
+
+- Added a least-privilege GitHub Actions workflow that runs `make check` on
+  pushes, pull requests, and manual dispatches with checkout pinned by commit.
+- Kept the Python 3 documentation guard mandatory on hosted runners while
+  allowing explicit skips only for unavailable legacy Python 2 checks.
+- Added checker coverage for the workflow permissions, timeout, commands,
+  completed CI plan, and Makefile interpreter split.
+
 ## 2026-06-09
 
 - Kept Python verification bytecode-free and added checker coverage to reject
