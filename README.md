@@ -55,8 +55,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   behavior, including no-argument sender exception recording and attachment
   file cleanup when MIME construction fails. Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
-  newline rejection, explicit attachment mimetype validation, and TLS startup
-  when `use_tls=True` without login credentials.
+  and filename newline rejection, explicit attachment mimetype validation, and
+  TLS startup when `use_tls=True` without login credentials.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
@@ -104,6 +104,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 - See `docs/plans/2026-06-10-hosted-legacy-validation.md` for the enforced
   Python 2.7 hosted validation boundary.
+- See `docs/plans/2026-06-10-attachment-filename-header-guard.md` for
+  attachment filename newline rejection.
 
 ## Contributing
 

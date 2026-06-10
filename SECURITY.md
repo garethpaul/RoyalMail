@@ -39,6 +39,8 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Message headers, SMTP envelope addresses, and attachment Content-ID headers
 should reject carriage returns and line feeds so untrusted values cannot inject
 additional email headers or recipients.
+Attachment basenames used in `Content-Disposition` parameters should reject
+the same newline characters before the attachment file is read.
 Explicit attachment mimetypes should also reject malformed values and newline
 characters before MIME headers are constructed.
 When callers request `use_tls=True`, the SMTP connection should start TLS even

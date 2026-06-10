@@ -2,6 +2,8 @@
 
 ## 2026-06-10
 
+- Rejected newline characters in attachment filenames before file reads or
+  `Content-Disposition` header serialization, with Python 2 regression coverage.
 - Added a least-privilege GitHub Actions workflow that runs `make check` on
   pushes, pull requests, and manual dispatches with checkout pinned by commit.
 - Kept the Python 3 documentation guard mandatory on hosted runners while
