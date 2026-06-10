@@ -6,6 +6,9 @@
   pushes, pull requests, and manual dispatches with checkout pinned by commit.
 - Kept the Python 3 documentation guard mandatory on hosted runners while
   allowing explicit skips only for unavailable legacy Python 2 checks.
+- Replaced the skip-based job with full syntax and unit-test validation in a
+  digest-pinned Python 2.7.18 container.
+- Made `make check` root-independent and fail when Python 2 is unavailable.
 - Added checker coverage for the workflow permissions, timeout, commands,
   completed CI plan, and Makefile interpreter split.
 

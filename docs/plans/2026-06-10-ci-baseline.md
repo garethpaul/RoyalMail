@@ -38,3 +38,9 @@ turning the entire verification command into a successful no-op.
 
 - Port the email composition implementation and tests to Python 3 or document
   the repository as Python 2 archive-only.
+
+## Superseded Limitation
+
+The successful Python 2 skip behavior described above was replaced on
+2026-06-10 by the pinned full-runtime gate in
+`docs/plans/2026-06-10-hosted-legacy-validation.md`.

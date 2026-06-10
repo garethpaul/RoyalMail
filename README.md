@@ -61,8 +61,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
 - GitHub Actions runs `make check` through `.github/workflows/check.yml`.
-  The Python 3 documentation guard always runs; hosted runners without
-  `python2` report explicit skips only for legacy syntax and unit-test steps.
+  The job uses a digest-pinned Python 2.7.18 container and fails if syntax,
+  unit tests, or repository contracts fail; the canonical gate never skips an
+  unavailable legacy runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -101,6 +102,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-09-bytecode-free-verification.md` for the
   bytecode-free verification guard.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
+- See `docs/plans/2026-06-10-hosted-legacy-validation.md` for the enforced
+  Python 2.7 hosted validation boundary.
 
 ## Contributing
 
