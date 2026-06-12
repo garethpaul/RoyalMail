@@ -43,7 +43,9 @@ additional email headers or recipients.
 Attachment basenames used in `Content-Disposition` parameters should reject
 the same newline characters before the attachment file is read.
 Explicit attachment mimetypes should also reject malformed values and newline
-characters before MIME headers are constructed.
+characters before MIME headers are constructed. Both components are restricted
+to ASCII MIME type tokens so parameters, whitespace, delimiters, controls, and
+non-ASCII bytes cannot become attachment header syntax.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
 if the relay does not require login credentials.
 

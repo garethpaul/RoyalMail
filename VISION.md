@@ -18,7 +18,8 @@ Priority:
 - Keep SMTP credentials caller-provided and out of source control
 - Maintain attachment and multipart message behavior
 - Keep constructor attachment tuples aligned with `attach()` mimetype support
-- Validate explicit attachment mimetypes before MIME construction
+- Restrict explicit attachment maintypes and subtypes to ASCII MIME type tokens
+  before MIME construction or attachment reads
 - Keep attachment file handles closed on MIME construction failures
 - Start TLS whenever callers request `use_tls=True`
 - Keep SMTP connections closed on send or login failures

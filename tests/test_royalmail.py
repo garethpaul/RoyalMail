@@ -165,6 +165,29 @@ class RoyalMailTests(unittest.TestCase):
                 os.close(fd)
             os.remove(attachment_path)
 
+    def test_attachment_accepts_vendor_mimetype_tokens(self):
+        fd, attachment_path = tempfile.mkstemp(suffix='.royalmail')
+        try:
+            os.write(fd, 'attachment body')
+            os.close(fd)
+            fd = None
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Plain body',
+                attachments=[(attachment_path, None, 'application/vnd.example+json')],
+            )
+
+            parsed = message_from_string(message.as_string())
+            attachment = parsed.get_payload()[1]
+
+            self.assertEqual('application/vnd.example+json', attachment.get_content_type())
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.remove(attachment_path)
+
     def test_attachment_file_is_closed_when_mime_creation_fails(self):
         tracking_file = TrackingFile()
         original_mimebase = royalmail.MIMEBase
@@ -320,18 +343,32 @@ class RoyalMailTests(unittest.TestCase):
             message.as_string()
 
     def test_rejects_malformed_attachment_mimetype(self):
-        message = royalmail.Message(
-            To='to@example.com',
-            From='from@example.com',
-            Subject='Subject',
-            Body='Body',
-            attachments=[
-                ('missing.txt', None, 'text'),
-            ],
+        invalid_mimetypes = (
+            'text',
+            'text/',
+            '/plain',
+            'text//plain',
+            'text/plain; charset=utf-8',
+            'text /plain',
+            'text/\tplain',
+            'text/pl:ain',
+            'text/pl\xffain',
+            42,
         )
 
-        with self.assertRaises(ValueError):
-            message.as_string()
+        for mimetype in invalid_mimetypes:
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[
+                    ('missing.txt', None, mimetype),
+                ],
+            )
+
+            with self.assertRaises(ValueError):
+                message.as_string()
 
     def test_send_quits_smtp_connection_when_sendmail_fails(self):
         message = royalmail.Message(

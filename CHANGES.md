@@ -1,5 +1,11 @@
 # Changes
 
+## 2026-06-12
+
+- Restricted explicit attachment maintypes and subtypes to ASCII MIME type
+  tokens before MIME construction or file reads, with Python 2 regression and
+  checker coverage.
+
 ## 2026-06-10
 
 - Rejected newline characters in attachment filenames before file reads or

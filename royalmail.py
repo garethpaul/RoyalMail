@@ -32,6 +32,7 @@ import smtplib
 import threading
 import Queue
 import uuid
+import re
 
 # this is to support name changes
 # from version 2.4 to version 2.5
@@ -59,6 +60,8 @@ import mimetypes
 import time
 
 from os import path
+
+MIME_TOKEN_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
 
 class RoyalMail(object):
     """
@@ -260,8 +263,10 @@ class Message(object):
         if '\n' in mimetype or '\r' in mimetype:
             raise ValueError('Attachment mimetype must not contain newlines')
         parts = mimetype.split('/')
-        if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise ValueError('Attachment mimetype must use maintype/subtype')
+        if (len(parts) != 2 or
+                not MIME_TOKEN_RE.match(parts[0]) or
+                not MIME_TOKEN_RE.match(parts[1])):
+            raise ValueError('Attachment mimetype must use ASCII maintype/subtype tokens')
         return mimetype
 
     def _multipart(self):

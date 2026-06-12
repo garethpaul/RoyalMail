@@ -14,8 +14,11 @@ CANONICAL_PLAN = os.path.join(DOCS_PLANS, '2026-06-08-royalmail-baseline.md')
 BYTECODE_PLAN = os.path.join(DOCS_PLANS, '2026-06-09-bytecode-free-verification.md')
 CI_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-ci-baseline.md')
 HOSTED_LEGACY_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-hosted-legacy-validation.md')
+MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-token-guard.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
+ROYALMAIL_SOURCE = os.path.join(ROOT, 'royalmail.py')
+ROYALMAIL_TESTS = os.path.join(ROOT, 'tests', 'test_royalmail.py')
 
 
 def rel(path):
@@ -29,7 +32,15 @@ def read(path):
 
 failures = []
 
-for required_path in (CANONICAL_PLAN, BYTECODE_PLAN, CI_PLAN, HOSTED_LEGACY_PLAN, CI_WORKFLOW):
+for required_path in (
+        CANONICAL_PLAN,
+        BYTECODE_PLAN,
+        CI_PLAN,
+        HOSTED_LEGACY_PLAN,
+        MIMETYPE_TOKEN_PLAN,
+        CI_WORKFLOW,
+        ROYALMAIL_SOURCE,
+        ROYALMAIL_TESTS):
     if not os.path.isfile(required_path):
         failures.append('%s is missing' % rel(required_path))
 
@@ -65,8 +76,35 @@ if os.path.isfile(MAKEFILE):
 
 for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
     docs_path = os.path.join(ROOT, docs_file)
-    if not os.path.isfile(docs_path) or 'GitHub Actions' not in read(docs_path):
+    docs = ' '.join(read(docs_path).split()) if os.path.isfile(docs_path) else ''
+    if 'GitHub Actions' not in docs:
         failures.append('%s must document the GitHub Actions baseline' % docs_file)
+    if 'ASCII MIME type tokens' not in docs:
+        failures.append('%s must document ASCII MIME type tokens' % docs_file)
+
+if os.path.isfile(ROYALMAIL_SOURCE):
+    royalmail_source = read(ROYALMAIL_SOURCE)
+    required_source_fragments = (
+        'MIME_TOKEN_RE = re.compile(',
+        "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$",
+        'len(parts) != 2',
+        'not MIME_TOKEN_RE.match(parts[0])',
+        'not MIME_TOKEN_RE.match(parts[1])',
+        'Attachment mimetype must use ASCII maintype/subtype tokens',
+    )
+    for fragment in required_source_fragments:
+        if fragment not in royalmail_source:
+            failures.append('royalmail.py must contain %s' % fragment)
+
+if os.path.isfile(ROYALMAIL_TESTS):
+    royalmail_tests = read(ROYALMAIL_TESTS)
+    for fragment in (
+            'test_attachment_accepts_vendor_mimetype_tokens',
+            'application/vnd.example+json',
+            'text/plain; charset=utf-8',
+            'text/pl\\xffain'):
+        if fragment not in royalmail_tests:
+            failures.append('tests/test_royalmail.py must contain %s' % fragment)
 
 bytecode_files = []
 for dirpath, dirnames, filenames in os.walk(ROOT):
