@@ -27,6 +27,7 @@ Priority:
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`
 - Keep verification runs from leaving Python bytecode in the checkout
+- Keep GitHub Actions running the guarded `make check` baseline before review
 - Treat Python 2 compatibility code as legacy context
 
 Next priorities:
@@ -40,6 +41,7 @@ Contribution rules:
 - One PR = one focused message, SMTP, attachment, test, or documentation change.
 - Do not commit SMTP credentials or real message content.
 - Keep transport-security changes explicit.
+- Keep `.github/workflows/check.yml` aligned with the guarded Python 2 baseline.
 - Add fixtures for message-format behavior changes.
 
 ## Security And Responsible Use

@@ -1,5 +1,15 @@
 # Changes
 
+## 2026-06-10
+
+- Added a GitHub Actions check workflow that runs the guarded `make check`
+  baseline on pushes, pull requests, and manual dispatches.
+- Guarded legacy Python 2 lint and test Makefile steps so hosted runners
+  without `python2` report explicit skips while local Python 2 hosts still run
+  the full baseline.
+- Added a docs-plan guard requiring the CI workflow, completed CI baseline plan,
+  and Python 2 skip behavior to remain checked in.
+
 ## 2026-06-09
 
 - Kept Python verification bytecode-free and added checker coverage to reject

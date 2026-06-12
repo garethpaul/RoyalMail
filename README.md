@@ -60,6 +60,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
+- GitHub Actions runs `make check` through `.github/workflows/check.yml`.
+  Hosted runners without `python2` report explicit skips for legacy Python 2
+  lint and test steps; local hosts with `python2` still run the full baseline.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -97,6 +100,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   unauthenticated STARTTLS regression guard.
 - See `docs/plans/2026-06-09-bytecode-free-verification.md` for the
   bytecode-free verification guard.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
 
 ## Contributing
 
