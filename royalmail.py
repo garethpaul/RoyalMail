@@ -298,6 +298,10 @@ class Message(object):
         """
         if cid:
             cid = self._safe_header_value('Content-ID', cid)
+            attachment_name = None
+        else:
+            attachment_name = self._safe_header_value(
+                'Attachment filename', path.basename(filename))
 
         if mimetype is not None:
             ctype = self._safe_mimetype(mimetype)
@@ -334,7 +338,7 @@ class Message(object):
             msg.add_header('Content-Disposition', 'inline')
         else:
             # Set the filename parameter
-            msg.add_header('Content-Disposition', 'attachment', filename=path.basename(filename))
+            msg.add_header('Content-Disposition', 'attachment', filename=attachment_name)
         outer.attach(msg)
 
     def attach(self, filename, cid=None, mimetype=None):

@@ -1,25 +1,22 @@
-.PHONY: build check lint test verify
+ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 PYTHON ?= python2
 export PYTHONDONTWRITEBYTECODE = 1
 
+.PHONY: build check contract-test lint test verify
+
 lint:
-	@if command -v "$(PYTHON)" >/dev/null 2>&1; then \
-		$(PYTHON) -B -c 'compile(open("royalmail.py").read(), "royalmail.py", "exec")'; \
-		$(PYTHON) -B scripts/check-docs-plans.py; \
-	else \
-		echo "Skipping legacy Python 2 RoyalMail lint checks: $(PYTHON) not found."; \
-	fi
+	$(PYTHON) -B "$(ROOT)/scripts/check-docs-plans.py"
+	cd "$(ROOT)" && $(PYTHON) -B -c 'compile(open("royalmail.py").read(), "royalmail.py", "exec")'
+
+contract-test:
+	$(PYTHON) -B "$(ROOT)/scripts/test_workflow_contract.py"
 
 test:
-	@if command -v "$(PYTHON)" >/dev/null 2>&1; then \
-		$(PYTHON) -B -m unittest discover -s tests; \
-	else \
-		echo "Skipping legacy Python 2 RoyalMail tests: $(PYTHON) not found."; \
-	fi
+	cd "$(ROOT)" && $(PYTHON) -B -m unittest discover -s tests
 
 build: lint
 
-verify: lint test build
+verify: lint contract-test test
 
 check: verify

@@ -55,14 +55,16 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   behavior, including no-argument sender exception recording and attachment
   file cleanup when MIME construction fails. Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
-  newline rejection, explicit attachment mimetype validation, and TLS startup
-  when `use_tls=True` without login credentials.
+  and filename newline rejection, explicit attachment mimetype validation, and
+  TLS startup when `use_tls=True` without login credentials.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
 - GitHub Actions runs `make check` through `.github/workflows/check.yml`.
-  Hosted runners without `python2` report explicit skips for legacy Python 2
-  lint and test steps; local hosts with `python2` still run the full baseline.
+  The job uses a digest-pinned Python 2.7.18 container, credential-free pinned
+  checkout, and read-only permissions. It fails if syntax, unit tests,
+  repository contracts, or workflow-policy mutation tests fail; the canonical
+  gate never skips an unavailable legacy runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -101,6 +103,10 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `docs/plans/2026-06-09-bytecode-free-verification.md` for the
   bytecode-free verification guard.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the GitHub Actions baseline.
+- See `docs/plans/2026-06-10-hosted-legacy-validation.md` for the enforced
+  Python 2.7 hosted validation boundary.
+- See `docs/plans/2026-06-10-attachment-filename-header-guard.md` for
+  attachment filename newline rejection.
 
 ## Contributing
 

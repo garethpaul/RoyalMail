@@ -281,6 +281,30 @@ class RoyalMailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             message.as_string()
 
+    def test_rejects_newlines_in_attachment_filename(self):
+        fd, attachment_path = tempfile.mkstemp(
+            prefix='report\nBCC: injected@example.com-',
+            suffix='.txt',
+        )
+        try:
+            os.write(fd, 'attachment body')
+            os.close(fd)
+            fd = None
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[(attachment_path, None, 'text/plain')],
+            )
+
+            with self.assertRaises(ValueError):
+                message.as_string()
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.remove(attachment_path)
+
     def test_rejects_newlines_in_attachment_mimetype(self):
         message = royalmail.Message(
             To='to@example.com',

@@ -2,13 +2,17 @@
 
 ## 2026-06-10
 
-- Added a GitHub Actions check workflow that runs the guarded `make check`
-  baseline on pushes, pull requests, and manual dispatches.
-- Guarded legacy Python 2 lint and test Makefile steps so hosted runners
-  without `python2` report explicit skips while local Python 2 hosts still run
-  the full baseline.
-- Added a docs-plan guard requiring the CI workflow, completed CI baseline plan,
-  and Python 2 skip behavior to remain checked in.
+- Rejected newline characters in attachment filenames before file reads or
+  `Content-Disposition` header serialization, with Python 2 regression coverage.
+- Added a least-privilege GitHub Actions workflow that runs `make check` on
+  pushes, pull requests, and manual dispatches with credential-free checkout
+  pinned by commit.
+- Replaced the prepared skip-based job with full syntax, contract, and unit-test
+  validation in a digest-pinned Python 2.7.18 container.
+- Made `make check` root-independent and fail when Python 2 is unavailable.
+- Added exact workflow-policy validation and 15 hostile mutations covering
+  triggers, credentials, actions, permissions, runner, timeout, image digest,
+  failure handling, runtime proof, and the canonical command.
 
 ## 2026-06-09
 

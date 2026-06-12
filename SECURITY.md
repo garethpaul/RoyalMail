@@ -29,8 +29,9 @@ Helpful reports include:
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
-- GitHub Actions runs the guarded `make check` baseline before review, with
-  explicit skips only when Python 2 is unavailable.
+- GitHub Actions runs the full gate in a digest-pinned Python 2.7.18 container;
+  credential persistence is disabled, permissions are read-only, and legacy
+  syntax, unit-test, or workflow-policy failures cannot be skipped.
 
 ## Service and API Notes
 
@@ -39,6 +40,8 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Message headers, SMTP envelope addresses, and attachment Content-ID headers
 should reject carriage returns and line feeds so untrusted values cannot inject
 additional email headers or recipients.
+Attachment basenames used in `Content-Disposition` parameters should reject
+the same newline characters before the attachment file is read.
 Explicit attachment mimetypes should also reject malformed values and newline
 characters before MIME headers are constructed.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
