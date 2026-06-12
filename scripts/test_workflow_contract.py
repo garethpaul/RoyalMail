@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 from __future__ import print_function
 
-from workflow_contract import CHECKOUT_ACTION, validate
+from workflow_contract import CHECKOUT_ACTION, CONTAINER_IMAGE, PYTHON3_CONTAINER_IMAGE, validate
 
 
 BASELINE = '''name: Check
@@ -33,7 +33,22 @@ jobs:
       - name: Show Python runtime
         run: python2 --version
       - name: Run full legacy verification
-        run: make check
+        run: make check-python2
+
+  modern-python:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    container:
+      image: python:3.12.8@sha256:e74938514dc67ad3eade8798aa929f5dd569e463758c83243636d4e1b54aa559
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - name: Show Python runtime
+        run: python3 --version
+      - name: Run full modern verification
+        run: make check-python3
 '''
 
 
@@ -79,23 +94,35 @@ mutations = {
         '    runs-on: ubuntu-24.04\n    runs-on: ubuntu-24.04',
     ),
     'unbounded job': mutate('unbounded job', '    timeout-minutes: 10\n', ''),
-    'floating container': mutate(
-        'floating container',
-        'python:2.7.18@sha256:c934af72b8bd03b9804d5bde2569c320926e70392d708d113a2e71bcf98c8a20',
+    'floating Python 2 container': mutate(
+        'floating Python 2 container',
+        CONTAINER_IMAGE,
         'python:2.7.18',
     ),
-    'wrong container digest': mutate(
-        'wrong container digest',
+    'wrong Python 2 container digest': mutate(
+        'wrong Python 2 container digest',
         'c934af72b8bd03b9804d5bde2569c320926e70392d708d113a2e71bcf98c8a20',
         '0000000000000000000000000000000000000000000000000000000000000000',
+    ),
+    'floating Python 3 container': mutate(
+        'floating Python 3 container',
+        PYTHON3_CONTAINER_IMAGE,
+        'python:3.12.8',
+    ),
+    'missing Python 3 job': mutate(
+        'missing Python 3 job',
+        '\n  modern-python:',
+        '\n  disabled-modern-python:',
     ),
     'continued failure': mutate(
         'continued failure',
         '    steps:',
         '    continue-on-error: true\n    steps:',
     ),
-    'skipped runtime proof': mutate('skipped runtime proof', 'run: python2 --version', 'run: true'),
-    'weakened gate': mutate('weakened gate', 'run: make check', 'run: make lint'),
+    'skipped Python 2 runtime proof': mutate('skipped Python 2 runtime proof', 'run: python2 --version', 'run: true'),
+    'skipped Python 3 runtime proof': mutate('skipped Python 3 runtime proof', 'run: python3 --version', 'run: true'),
+    'weakened Python 2 gate': mutate('weakened Python 2 gate', 'run: make check-python2', 'run: make lint-python2'),
+    'weakened Python 3 gate': mutate('weakened Python 3 gate', 'run: make check-python3', 'run: make lint-python3'),
 }
 
 for description, workflow in mutations.items():

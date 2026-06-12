@@ -2,6 +2,9 @@
 
 ## 2026-06-12
 
+- Added Python 3.12 compatibility without dropping Python 2.7, running the same
+  18 message, attachment, SMTP, and manager tests in both digest-pinned GitHub
+  Actions containers.
 - Restricted explicit attachment maintypes and subtypes to ASCII MIME type
   tokens before MIME construction or file reads, with Python 2 regression and
   checker coverage.

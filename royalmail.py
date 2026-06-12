@@ -30,9 +30,20 @@ Sample code:
 """
 import smtplib
 import threading
-import Queue
 import uuid
 import re
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+
+try:
+    string_types = (basestring,)
+    text_type = unicode
+except NameError:
+    string_types = (str,)
+    text_type = str
 
 # this is to support name changes
 # from version 2.4 to version 2.5
@@ -62,6 +73,12 @@ import time
 from os import path
 
 MIME_TOKEN_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
+
+
+def _header_text(value, charset):
+    if isinstance(value, text_type):
+        return value
+    return value.decode(charset)
 
 class RoyalMail(object):
     """
@@ -116,21 +133,21 @@ class RoyalMail(object):
         we created in send()
         """
         me = msg._safe_header_value('From', msg.From)
-        if isinstance(msg.To, basestring):
+        if isinstance(msg.To, string_types):
             to = msg._safe_header_values('To', [msg.To])
         else:
             to = msg._safe_header_values('To', list(msg.To))
 
         cc = []
         if msg.CC:
-            if isinstance(msg.CC, basestring):
+            if isinstance(msg.CC, string_types):
                 cc = msg._safe_header_values('CC', [msg.CC])
             else:
                 cc = msg._safe_header_values('CC', list(msg.CC))
 
         bcc = []
         if msg.BCC:
-            if isinstance(msg.BCC, basestring):
+            if isinstance(msg.BCC, string_types):
                 bcc = msg._safe_header_values('BCC', [msg.BCC])
             else:
                 bcc = msg._safe_header_values('BCC', list(msg.BCC))
@@ -162,7 +179,7 @@ class Message(object):
         self.attachments = []
         if attachments:
             for attachment in attachments:
-                if isinstance(attachment, basestring):
+                if isinstance(attachment, string_types):
                     self.attachments.append((attachment, None, None))
                 else:
                     try:
@@ -230,18 +247,18 @@ class Message(object):
         if self.charset == 'us-ascii':
             msg['Subject'] = subject
         else:
-            msg['Subject'] = str(make_header([(unicode(subject, self.charset), self.charset)]))
+            msg['Subject'] = str(make_header([(_header_text(subject, self.charset), self.charset)]))
 
         msg['From'] = self._safe_header_value('From', self.From)
 
-        if isinstance(self.To, basestring):
+        if isinstance(self.To, string_types):
             msg['To'] = self._safe_header_value('To', self.To)
         else:
             self.To = self._safe_header_values('To', list(self.To))
             msg['To'] = ", ".join(self.To)
 
         if self.CC:
-            if isinstance(self.CC, basestring):
+            if isinstance(self.CC, string_types):
                 msg['CC'] = self._safe_header_value('CC', self.CC)
             else:
                 self.CC = self._safe_header_values('CC', list(self.CC))
@@ -250,7 +267,7 @@ class Message(object):
         msg['Date'] = self._safe_header_value('Date', self.Date)
 
     def _safe_header_value(self, name, value):
-        if isinstance(value, basestring) and ('\n' in value or '\r' in value):
+        if isinstance(value, string_types) and ('\n' in value or '\r' in value):
             raise ValueError('%s header must not contain newlines' % name)
         return value
 
@@ -258,7 +275,7 @@ class Message(object):
         return [self._safe_header_value(name, value) for value in values]
 
     def _safe_mimetype(self, mimetype):
-        if not isinstance(mimetype, basestring):
+        if not isinstance(mimetype, string_types):
             raise ValueError('Attachment mimetype must be a string')
         if '\n' in mimetype or '\r' in mimetype:
             raise ValueError('Attachment mimetype must not contain newlines')
@@ -326,7 +343,7 @@ class Message(object):
 
         if maintype == 'text':
             # Note: we should handle calculating the charset
-            msg = MIMEText(payload, _subtype=subtype)
+            msg = MIMEText(payload, _subtype=subtype, _charset=self.charset)
         elif maintype == 'image':
             msg = MIMEImage(payload, _subtype=subtype)
         elif maintype == 'audio':

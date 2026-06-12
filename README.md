@@ -17,7 +17,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `docs/plans` - completed maintenance plans for the current baseline
 - `plans` - historical implementation notes
 - `scripts` - documentation-plan validators
-- `tests` - Python 2 unit tests for email composition and sender behavior
+- `tests` - shared Python 2 and Python 3 unit tests for email composition and sender behavior
 - `royalmail.py` - email composition and SMTP sender implementation
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
@@ -34,6 +34,7 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- Python 2.7.18 and Python 3.12 for the complete local compatibility gate
 
 ### Setup
 
@@ -50,7 +51,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `make check` runs Python 2 syntax checks and unit tests for plain text, HTML,
+- `make check` runs the same syntax checks and unit tests on Python 2 and Python
+  3 for plain text, HTML,
   attachment, envelope, header-injection rejection, SMTP cleanup, and manager
   behavior, including no-argument sender exception recording and attachment
   file cleanup when MIME construction fails. Attachment tests also cover
@@ -60,11 +62,11 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
-- GitHub Actions runs `make check` through `.github/workflows/check.yml`.
-  The job uses a digest-pinned Python 2.7.18 container, credential-free pinned
-  checkout, and read-only permissions. It fails if syntax, unit tests,
-  repository contracts, or workflow-policy mutation tests fail; the canonical
-  gate never skips an unavailable legacy runtime.
+- GitHub Actions runs explicit Python 2 and Python 3 targets through
+  `.github/workflows/check.yml`. The jobs use digest-pinned Python 2.7.18 and
+  Python 3.12.8 containers, credential-free pinned checkout, and read-only
+  permissions. They fail if syntax, unit tests, repository contracts, or
+  workflow-policy mutation tests fail; neither runtime can be skipped.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -109,6 +111,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   attachment filename newline rejection.
 - See `docs/plans/2026-06-12-attachment-mimetype-token-guard.md` for explicit
   ASCII MIME type tokens enforced before attachment files are read.
+- See `docs/plans/2026-06-12-python3-compatibility.md` for the shared Python
+  2.7 and Python 3.12 behavior and hosted validation contract.
 
 ## Contributing
 

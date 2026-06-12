@@ -29,14 +29,16 @@ Priority:
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`
 - Keep verification runs from leaving Python bytecode in the checkout
-- Keep the full Python 2 syntax, unit-test, and documentation gate running in a
-  digest-pinned GitHub Actions container with credential-free checkout
+- Keep the shared Python 2 and Python 3 syntax, unit-test, and documentation
+  gates running in digest-pinned Python 2.7.18 and Python 3.12.8 GitHub Actions
+  containers with credential-free checkout
 - Keep hosted workflow policy protected by dependency-free hostile mutations
-- Treat Python 2 compatibility code as legacy context
+- Treat Python 2 compatibility code as legacy context while preserving the
+  supported Python 3.12 path
 
 Next priorities:
 
-- Document supported Python versions and TLS expectations
+- Document TLS expectations
 - Validate attachment paths and MIME type handling
 - Return clearer errors for SMTP failures
 
@@ -45,7 +47,7 @@ Contribution rules:
 - One PR = one focused message, SMTP, attachment, test, or documentation change.
 - Do not commit SMTP credentials or real message content.
 - Keep transport-security changes explicit.
-- Keep `.github/workflows/check.yml` aligned with the guarded Python 2 baseline.
+- Keep `.github/workflows/check.yml` aligned with both guarded runtime baselines.
 - Add fixtures for message-format behavior changes.
 
 ## Security And Responsible Use

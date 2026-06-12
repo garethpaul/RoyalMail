@@ -72,6 +72,17 @@ class TrackingFile(object):
 
 
 class RoyalMailTests(unittest.TestCase):
+    def test_unicode_subject_uses_declared_charset(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject=u'caf\u00e9',
+            Body='Body',
+            charset='utf-8',
+        )
+
+        self.assertIn('=?utf-8?', message.as_string().lower())
+
     def test_plain_text_message_headers_and_body(self):
         message = royalmail.Message(
             To=['to@example.com', 'other@example.com'],
@@ -113,7 +124,7 @@ class RoyalMailTests(unittest.TestCase):
     def test_attachment_uses_basename_and_octet_stream_fallback(self):
         fd, attachment_path = tempfile.mkstemp(suffix='.unknown-extension')
         try:
-            os.write(fd, 'attachment body')
+            os.write(fd, b'attachment body')
             os.close(fd)
             fd = None
             message = royalmail.Message(
@@ -144,7 +155,7 @@ class RoyalMailTests(unittest.TestCase):
     def test_constructor_attachment_tuple_accepts_mimetype(self):
         fd, attachment_path = tempfile.mkstemp(suffix='.royalmail')
         try:
-            os.write(fd, 'attachment body')
+            os.write(fd, b'attachment body')
             os.close(fd)
             fd = None
             message = royalmail.Message(
@@ -168,7 +179,7 @@ class RoyalMailTests(unittest.TestCase):
     def test_attachment_accepts_vendor_mimetype_tokens(self):
         fd, attachment_path = tempfile.mkstemp(suffix='.royalmail')
         try:
-            os.write(fd, 'attachment body')
+            os.write(fd, b'attachment body')
             os.close(fd)
             fd = None
             message = royalmail.Message(
@@ -310,7 +321,7 @@ class RoyalMailTests(unittest.TestCase):
             suffix='.txt',
         )
         try:
-            os.write(fd, 'attachment body')
+            os.write(fd, b'attachment body')
             os.close(fd)
             fd = None
             message = royalmail.Message(

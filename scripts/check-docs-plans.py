@@ -15,6 +15,7 @@ BYTECODE_PLAN = os.path.join(DOCS_PLANS, '2026-06-09-bytecode-free-verification.
 CI_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-ci-baseline.md')
 HOSTED_LEGACY_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-hosted-legacy-validation.md')
 MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-token-guard.md')
+PYTHON3_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-python3-compatibility.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 ROYALMAIL_SOURCE = os.path.join(ROOT, 'royalmail.py')
@@ -38,6 +39,7 @@ for required_path in (
         CI_PLAN,
         HOSTED_LEGACY_PLAN,
         MIMETYPE_TOKEN_PLAN,
+        PYTHON3_PLAN,
         CI_WORKFLOW,
         ROYALMAIL_SOURCE,
         ROYALMAIL_TESTS):
@@ -61,18 +63,22 @@ if os.path.isfile(MAKEFILE):
     makefile = read(MAKEFILE)
     required_makefile_phrases = (
         'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))',
-        'PYTHON ?= python2',
-        '$(PYTHON) -B "$(ROOT)/scripts/check-docs-plans.py"',
-        '$(PYTHON) -B "$(ROOT)/scripts/test_workflow_contract.py"',
-        '$(PYTHON) -B -m unittest discover -s tests',
-        'verify: lint contract-test test',
+        'PYTHON2 ?= python2',
+        'PYTHON3 ?= python3',
+        '$(PYTHON2) -B "$(ROOT)/scripts/check-docs-plans.py"',
+        '$(PYTHON3) -B "$(ROOT)/scripts/check-docs-plans.py"',
+        '$(PYTHON2) -B "$(ROOT)/scripts/test_workflow_contract.py"',
+        '$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"',
+        '$(PYTHON2) -B -m unittest discover -s tests',
+        '$(PYTHON3) -B -m unittest discover -s tests',
+        'verify: check-python2 check-python3',
     )
     for phrase in required_makefile_phrases:
         if phrase not in makefile:
             failures.append('Makefile must contain %s' % phrase)
 
-    if 'command -v "$(PYTHON)"' in makefile or 'Skipping legacy Python 2' in makefile:
-        failures.append('Makefile must require Python 2 verification instead of skipping it')
+    if 'command -v "$(PYTHON' in makefile or 'Skipping legacy Python 2' in makefile or 'Skipping Python 3' in makefile:
+        failures.append('Makefile must require both runtime gates instead of skipping them')
 
 for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
     docs_path = os.path.join(ROOT, docs_file)
@@ -81,6 +87,8 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document the GitHub Actions baseline' % docs_file)
     if 'ASCII MIME type tokens' not in docs:
         failures.append('%s must document ASCII MIME type tokens' % docs_file)
+    if 'Python 3.12' not in docs:
+        failures.append('%s must document the Python 3.12 compatibility gate' % docs_file)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     royalmail_source = read(ROYALMAIL_SOURCE)
@@ -91,6 +99,10 @@ if os.path.isfile(ROYALMAIL_SOURCE):
         'not MIME_TOKEN_RE.match(parts[0])',
         'not MIME_TOKEN_RE.match(parts[1])',
         'Attachment mimetype must use ASCII maintype/subtype tokens',
+        'import queue as Queue',
+        'string_types = (str,)',
+        'def _header_text(value, charset):',
+        '_charset=self.charset',
     )
     for fragment in required_source_fragments:
         if fragment not in royalmail_source:
@@ -102,7 +114,8 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'test_attachment_accepts_vendor_mimetype_tokens',
             'application/vnd.example+json',
             'text/plain; charset=utf-8',
-            'text/pl\\xffain'):
+            'text/pl\\xffain',
+            'test_unicode_subject_uses_declared_charset'):
         if fragment not in royalmail_tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 

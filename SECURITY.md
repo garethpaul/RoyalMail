@@ -29,9 +29,10 @@ Helpful reports include:
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
-- GitHub Actions runs the full gate in a digest-pinned Python 2.7.18 container;
-  credential persistence is disabled, permissions are read-only, and legacy
-  syntax, unit-test, or workflow-policy failures cannot be skipped.
+- GitHub Actions runs the shared behavior gate in digest-pinned Python 2.7.18
+  and Python 3.12.8 containers; credential persistence is disabled,
+  permissions are read-only, and neither runtime's syntax, unit-test, or
+  workflow-policy failures can be skipped.
 
 ## Service and API Notes
 
