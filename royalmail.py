@@ -73,6 +73,11 @@ import time
 from os import path
 
 MIME_TOKEN_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
+CONTENT_ID_RE = re.compile(
+    r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+"
+    r"(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*"
+    r"(?:@[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+"
+    r"(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*)?\Z")
 
 
 def _header_text(value, charset):
@@ -286,6 +291,15 @@ class Message(object):
             raise ValueError('Attachment mimetype must use ASCII maintype/subtype tokens')
         return mimetype
 
+    def _safe_content_id(self, cid):
+        if not isinstance(cid, string_types):
+            raise ValueError('Content-ID must be a string')
+        if '\n' in cid or '\r' in cid:
+            raise ValueError('Content-ID header must not contain newlines')
+        if not CONTENT_ID_RE.match(cid):
+            raise ValueError('Content-ID must use printable ASCII msg-id token characters')
+        return cid
+
     def _multipart(self):
         """The email has attachments"""
 
@@ -318,8 +332,8 @@ class Message(object):
         """
         If mimetype is None, it will try to guess the mimetype
         """
-        if cid:
-            cid = self._safe_header_value('Content-ID', cid)
+        if cid is not None:
+            cid = self._safe_content_id(cid)
             attachment_name = None
         else:
             attachment_name = self._safe_header_value(
@@ -355,7 +369,7 @@ class Message(object):
             encoders.encode_base64(msg)
 
         # Set the content-ID header
-        if cid:
+        if cid is not None:
             msg.add_header('Content-ID', '<%s>' % cid)
             msg.add_header('Content-Disposition', 'inline')
         else:

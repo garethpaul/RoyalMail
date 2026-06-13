@@ -315,6 +315,59 @@ class RoyalMailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             message.as_string()
 
+    def test_attachment_accepts_ascii_msg_id_content_id(self):
+        fd, attachment_path = tempfile.mkstemp(suffix='.txt')
+        try:
+            os.write(fd, b'attachment body')
+            os.close(fd)
+            fd = None
+            content_id = "part!#$%&'*+-/=?^_`{|}~.tag@example-domain.test"
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[(attachment_path, content_id, 'text/plain')],
+            )
+
+            parsed = message_from_string(message.as_string())
+            attachment = parsed.get_payload()[1]
+            self.assertEqual('<%s>' % content_id, attachment['Content-ID'])
+            self.assertEqual('inline', attachment['Content-Disposition'])
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.remove(attachment_path)
+
+    def test_rejects_malformed_attachment_content_ids_before_file_read(self):
+        invalid_content_ids = (
+            '',
+            'has space',
+            'left<bracket',
+            'right>bracket',
+            'double"quote',
+            'back\\slash',
+            'control\x00byte',
+            u'non-ascii-\u2603',
+            '.leading-dot',
+            'trailing-dot.',
+            'double..dot',
+            'two@@domains',
+            42,
+        )
+
+        for content_id in invalid_content_ids:
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[('missing.txt', content_id, 'text/plain')],
+            )
+
+            with self.assertRaises(ValueError):
+                message.as_string()
+
     def test_rejects_newlines_in_attachment_filename(self):
         fd, attachment_path = tempfile.mkstemp(
             prefix='report\nBCC: injected@example.com-',

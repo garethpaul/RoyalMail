@@ -87,6 +87,8 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document the GitHub Actions baseline' % docs_file)
     if 'ASCII MIME type tokens' not in docs:
         failures.append('%s must document ASCII MIME type tokens' % docs_file)
+    if 'ASCII Content-ID tokens' not in docs:
+        failures.append('%s must document ASCII Content-ID tokens' % docs_file)
     if 'Python 3.12' not in docs:
         failures.append('%s must document the Python 3.12 compatibility gate' % docs_file)
 
@@ -99,6 +101,12 @@ if os.path.isfile(ROYALMAIL_SOURCE):
         'not MIME_TOKEN_RE.match(parts[0])',
         'not MIME_TOKEN_RE.match(parts[1])',
         'Attachment mimetype must use ASCII maintype/subtype tokens',
+        'CONTENT_ID_RE = re.compile(',
+        "(?:\\.[A-Za-z0-9!#$%&'*+\\-/=?^_`{|}~]+)*",
+        "(?:@[A-Za-z0-9!#$%&'*+\\-/=?^_`{|}~]+",
+        'def _safe_content_id(self, cid):',
+        'Content-ID must use printable ASCII msg-id token characters',
+        'if cid is not None:',
         'import queue as Queue',
         'string_types = (str,)',
         'def _header_text(value, charset):',
@@ -115,6 +123,8 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'application/vnd.example+json',
             'text/plain; charset=utf-8',
             'text/pl\\xffain',
+            'test_attachment_accepts_ascii_msg_id_content_id',
+            'test_rejects_malformed_attachment_content_ids_before_file_read',
             'test_unicode_subject_uses_declared_charset'):
         if fragment not in royalmail_tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)

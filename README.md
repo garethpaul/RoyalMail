@@ -57,8 +57,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   behavior, including no-argument sender exception recording and attachment
   file cleanup when MIME construction fails. Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
-  and filename newline rejection, explicit ASCII MIME type tokens, and TLS
-  startup when `use_tls=True` without login credentials.
+  and filename newline rejection, explicit ASCII MIME type tokens, ASCII
+  Content-ID tokens, and TLS startup when `use_tls=True` without login
+  credentials.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
@@ -113,6 +114,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   ASCII MIME type tokens enforced before attachment files are read.
 - See `docs/plans/2026-06-12-python3-compatibility.md` for the shared Python
   2.7 and Python 3.12 behavior and hosted validation contract.
+- See `docs/plans/2026-06-13-attachment-content-id-token-guard.md` for ASCII
+  Content-ID tokens enforced before attachment files are read.
 
 ## Contributing
 

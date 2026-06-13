@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-13
+
+- Restricted caller-supplied attachment identifiers to ASCII Content-ID tokens
+  before file reads, preserving common dot-atom and `name@domain` values.
+
 ## 2026-06-12
 
 - Added Python 3.12 compatibility without dropping Python 2.7, running the same

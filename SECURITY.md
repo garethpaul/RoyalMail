@@ -41,6 +41,9 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Message headers, SMTP envelope addresses, and attachment Content-ID headers
 should reject carriage returns and line feeds so untrusted values cannot inject
 additional email headers or recipients.
+Attachment Content-ID values are restricted to ASCII Content-ID tokens so
+brackets, whitespace, controls, and non-ASCII bytes cannot corrupt msg-id
+header syntax.
 Attachment basenames used in `Content-Disposition` parameters should reject
 the same newline characters before the attachment file is read.
 Explicit attachment mimetypes should also reject malformed values and newline

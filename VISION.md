@@ -25,6 +25,7 @@ Priority:
 - Keep SMTP connections closed on send or login failures
 - Reject newline characters in message headers and SMTP envelope addresses
 - Reject newline characters in attachment Content-ID headers
+- Restrict attachment identifiers to ASCII Content-ID tokens before file reads
 - Reject newline characters in attachment filename header parameters
 - Keep Manager failure results stable for sender exceptions without arguments
 - Keep completed maintenance plans under `docs/plans`

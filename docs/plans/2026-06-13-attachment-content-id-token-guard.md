@@ -1,6 +1,6 @@
 # Attachment Content-ID Token Guard
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -25,7 +25,17 @@ dot-atom and `name@domain` identifiers.
 - Add focused positive and hostile regression coverage on Python 2 and 3.
 - Keep attachment filenames, MIME types, and payload behavior unchanged.
 
-## Planned Verification
+## Work Completed
+
+- Added a Python 2/3-compatible ASCII msg-id token expression.
+- Added `_safe_content_id` string, newline, and token validation.
+- Treated every non-`None` Content-ID as explicitly supplied, so empty and
+  non-string values fail instead of silently changing attachment disposition.
+- Added broad positive punctuation coverage and hostile malformed-ID cases.
+- Added fail-closed source, test, documentation, and completed-plan contracts.
+- Updated README, security, vision, change, and maintenance-plan documentation.
+
+## Verification
 
 - Python 2 and Python 3 focused unit tests
 - `make check`
@@ -33,6 +43,10 @@ dot-atom and `name@domain` identifiers.
 - Focused non-string, bracket, whitespace, control, non-ASCII, bypass, and
   validation-order mutations
 - `git diff --check`
+
+Both Python 2 and Python 3 suites passed 20 tests. Full `make check` and the
+digest-pinned, read-only, network-isolated Python 2.7.18 and Python 3.12.8 gates
+passed syntax, documentation, 19 workflow mutations, and behavior validation.
 
 ## Scope Boundary
 
