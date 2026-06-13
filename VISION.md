@@ -28,6 +28,8 @@ Priority:
 - Restrict attachment identifiers to ASCII Content-ID tokens before file reads
 - Reject newline characters in attachment filename header parameters
 - Keep Manager failure results stable for sender exceptions without arguments
+- Keep every Manager queue dequeue paired with one acknowledgement, including
+  shutdown sentinels and failed sends
 - Keep completed maintenance plans under `docs/plans`
 - Keep verification runs from leaving Python bytecode in the checkout
 - Keep the shared Python 2 and Python 3 syntax, unit-test, and documentation

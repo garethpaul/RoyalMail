@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Balanced `Manager` queue acknowledgements for normal work, failed sends, and
+  the shutdown sentinel, with deterministic cross-runtime and mutation tests.
 - Restricted caller-supplied attachment identifiers to ASCII Content-ID tokens
   before file reads, preserving common dot-atom and `name@domain` values.
 

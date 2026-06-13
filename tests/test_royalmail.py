@@ -60,6 +60,14 @@ class NoArgFailingSender(object):
         raise RuntimeError()
 
 
+class SuccessfulSender(object):
+    def __init__(self):
+        self.messages = []
+
+    def send(self, message):
+        self.messages.append(message)
+
+
 class TrackingFile(object):
     def __init__(self):
         self.closed = False
@@ -502,6 +510,35 @@ class RoyalMailTests(unittest.TestCase):
             manager.results[message.message_id],
         )
         self.assertEqual([message.message_id], callbacks)
+        self.assertEqual(0, manager.queue.unfinished_tasks)
+
+    def test_manager_acknowledges_shutdown_sentinel(self):
+        manager = royalmail.Manager(RoyalMail=SuccessfulSender())
+        manager.queue.put(None)
+
+        manager.run()
+
+        self.assertEqual(0, manager.queue.unfinished_tasks)
+
+    def test_manager_acknowledges_message_and_shutdown_sentinel(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        sender = SuccessfulSender()
+        callbacks = []
+        manager = royalmail.Manager(RoyalMail=sender, callback=callbacks.append)
+        manager.queue.put(message)
+        manager.queue.put(None)
+
+        manager.run()
+
+        self.assertEqual([message], sender.messages)
+        self.assertEqual((True, 0, ''), manager.results[message.message_id])
+        self.assertEqual([message.message_id], callbacks)
+        self.assertEqual(0, manager.queue.unfinished_tasks)
 
 
 if __name__ == '__main__':

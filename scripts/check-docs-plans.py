@@ -20,6 +20,8 @@ CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 ROYALMAIL_SOURCE = os.path.join(ROOT, 'royalmail.py')
 ROYALMAIL_TESTS = os.path.join(ROOT, 'tests', 'test_royalmail.py')
+MANAGER_CONTRACT = os.path.join(ROOT, 'scripts', 'manager_contract.py')
+MANAGER_CONTRACT_TEST = os.path.join(ROOT, 'scripts', 'test_manager_contract.py')
 
 
 def rel(path):
@@ -42,7 +44,9 @@ for required_path in (
         PYTHON3_PLAN,
         CI_WORKFLOW,
         ROYALMAIL_SOURCE,
-        ROYALMAIL_TESTS):
+        ROYALMAIL_TESTS,
+        MANAGER_CONTRACT,
+        MANAGER_CONTRACT_TEST):
     if not os.path.isfile(required_path):
         failures.append('%s is missing' % rel(required_path))
 
@@ -69,6 +73,8 @@ if os.path.isfile(MAKEFILE):
         '$(PYTHON3) -B "$(ROOT)/scripts/check-docs-plans.py"',
         '$(PYTHON2) -B "$(ROOT)/scripts/test_workflow_contract.py"',
         '$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"',
+        '$(PYTHON2) -B "$(ROOT)/scripts/test_manager_contract.py"',
+        '$(PYTHON3) -B "$(ROOT)/scripts/test_manager_contract.py"',
         '$(PYTHON2) -B -m unittest discover -s tests',
         '$(PYTHON3) -B -m unittest discover -s tests',
         'verify: check-python2 check-python3',
@@ -111,6 +117,7 @@ if os.path.isfile(ROYALMAIL_SOURCE):
         'string_types = (str,)',
         'def _header_text(value, charset):',
         '_charset=self.charset',
+        '            finally:\n                self.queue.task_done()',
     )
     for fragment in required_source_fragments:
         if fragment not in royalmail_source:
@@ -125,7 +132,10 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'text/pl\\xffain',
             'test_attachment_accepts_ascii_msg_id_content_id',
             'test_rejects_malformed_attachment_content_ids_before_file_read',
-            'test_unicode_subject_uses_declared_charset'):
+            'test_unicode_subject_uses_declared_charset',
+            'test_manager_acknowledges_shutdown_sentinel',
+            'test_manager_acknowledges_message_and_shutdown_sentinel',
+            'self.assertEqual(0, manager.queue.unfinished_tasks)'):
         if fragment not in royalmail_tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 

@@ -1,6 +1,6 @@
 # Manager Sentinel Queue Completion
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -90,3 +90,26 @@ or missing canonical verification command.
 
 This change does not add cancellation APIs, alter daemon-thread behavior,
 change callback signatures, or redesign queue batching.
+
+## Work Completed
+
+- Moved queue acknowledgement into a per-dequeue `finally` boundary.
+- Acknowledged the `None` shutdown sentinel before the manager exits.
+- Added deterministic success, sender-failure, and sentinel queue-accounting
+  assertions without starting background threads or using sleeps.
+- Added a Python 2/3 static manager contract that validates the implementation
+  and rejects seven acknowledgement and sentinel-control-flow mutations.
+- Added the manager contract to both canonical runtime gates and protected its
+  Makefile commands through documentation validation.
+- Synchronized README, vision, and change-history documentation.
+
+## Verification
+
+- Focused manager completion tests passed on Python 2 and Python 3.
+- The static manager contract passed on Python 2 and Python 3 with all seven
+  hostile mutations rejected.
+- `make check` passed documentation, syntax, 19 workflow mutations, 7 manager
+  mutations, and all 22 behavior tests on both Python 2 and Python 3.
+- Digest-pinned, read-only, network-isolated Python 2.7.18 and Python 3.12.8
+  containers passed their complete runtime gates with the same test counts.
+- `git diff --check` is required before shipping.

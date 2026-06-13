@@ -430,40 +430,39 @@ class Manager(threading.Thread):
 
         while self.abort is False:
             msg = self.queue.get(block=True)
-            if msg is None:
-                break
-
             try:
-                num_msgs = len(msg)
-            except TypeError:
-                num_msgs = 1
-                msg = [msg]
+                if msg is None:
+                    break
 
-            for m in msg:
                 try:
-                    self.results[m.message_id] = (False, -1, '')
-                    self.RoyalMail.send(m)
-                    self.results[m.message_id] = (True, 0, '')
+                    len(msg)
+                except TypeError:
+                    msg = [msg]
 
-                except Exception as e:
-                    if len(e.args) >= 2:
-                        err_code, err_message = e.args[0], e.args[1]
-                    elif len(e.args) == 1:
-                        err_code, err_message = -1, e.args[0]
-                    else:
-                        err_code, err_message = -1, e.__class__.__name__
-
-                    self.results[m.message_id] = (False, err_code, err_message)
-
-                if self.callback:
+                for m in msg:
                     try:
-                        self.callback(m.message_id)
-                    except:
-                        pass
+                        self.results[m.message_id] = (False, -1, '')
+                        self.RoyalMail.send(m)
+                        self.results[m.message_id] = (True, 0, '')
 
-            # endfor
+                    except Exception as e:
+                        if len(e.args) >= 2:
+                            err_code, err_message = e.args[0], e.args[1]
+                        elif len(e.args) == 1:
+                            err_code, err_message = -1, e.args[0]
+                        else:
+                            err_code, err_message = -1, e.__class__.__name__
 
-            self.queue.task_done()
+                        self.results[m.message_id] = (False, err_code, err_message)
+
+                    if self.callback:
+                        try:
+                            self.callback(m.message_id)
+                        except:
+                            pass
+
+            finally:
+                self.queue.task_done()
 
     def send(self, msg):
         self.queue.put(msg)

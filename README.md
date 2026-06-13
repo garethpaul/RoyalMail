@@ -55,11 +55,15 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   3 for plain text, HTML,
   attachment, envelope, header-injection rejection, SMTP cleanup, and manager
   behavior, including no-argument sender exception recording and attachment
-  file cleanup when MIME construction fails. Attachment tests also cover
+  file cleanup when MIME construction fails. Manager coverage also verifies
+  that normal work and the shutdown sentinel leave queue completion balanced.
+  Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
   and filename newline rejection, explicit ASCII MIME type tokens, ASCII
   Content-ID tokens, and TLS startup when `use_tls=True` without login
   credentials.
+- `make check` runs a static manager contract on both runtimes and rejects
+  mutations that remove, duplicate, relocate, or bypass queue acknowledgement.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
@@ -116,6 +120,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   2.7 and Python 3.12 behavior and hosted validation contract.
 - See `docs/plans/2026-06-13-attachment-content-id-token-guard.md` for ASCII
   Content-ID tokens enforced before attachment files are read.
+- See `docs/plans/2026-06-13-manager-sentinel-queue-completion.md` for balanced
+  manager queue completion across normal work and shutdown.
 
 ## Contributing
 
