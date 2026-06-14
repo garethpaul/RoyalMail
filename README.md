@@ -122,6 +122,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Content-ID tokens enforced before attachment files are read.
 - See `docs/plans/2026-06-13-manager-sentinel-queue-completion.md` for balanced
   manager queue completion across normal work and shutdown.
+- See `docs/plans/2026-06-14-make-root-override-protection.md` for the
+  caller-resistant, location-independent dual-runtime Make root.
 
 ## Contributing
 
