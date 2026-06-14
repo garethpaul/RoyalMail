@@ -494,6 +494,37 @@ class RoyalMailTests(unittest.TestCase):
         self.assertEqual([message], sender.attempted_messages)
         self.assertEqual('quit', TrackingSMTP.instances[0].calls[-1])
 
+    def test_send_preserves_iterator_recipients_in_headers_and_envelope(self):
+        message = royalmail.Message(
+            To=(address for address in ['to@example.com', 'other@example.com']),
+            CC=(address for address in ['cc@example.com']),
+            BCC=(address for address in ['bcc@example.com']),
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        TrackingSMTP.instances = []
+        royalmail.smtplib.SMTP = TrackingSMTP
+
+        try:
+            royalmail.RoyalMail('smtp.example.com', 2525).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        sendmail = TrackingSMTP.instances[0].calls[0]
+        parsed = message_from_string(sendmail[3])
+        self.assertEqual(
+            ['to@example.com', 'other@example.com', 'cc@example.com', 'bcc@example.com'],
+            sendmail[2],
+        )
+        self.assertEqual('to@example.com, other@example.com', parsed['To'])
+        self.assertEqual('cc@example.com', parsed['CC'])
+        self.assertIsNone(parsed['BCC'])
+        self.assertEqual(['to@example.com', 'other@example.com'], message.To)
+        self.assertEqual(['cc@example.com'], message.CC)
+        self.assertEqual(['bcc@example.com'], message.BCC)
+
     def test_use_tls_starts_tls_without_login_credentials(self):
         message = royalmail.Message(
             To='to@example.com',

@@ -143,6 +143,7 @@ class RoyalMail(object):
             to = msg._safe_header_values('To', [msg.To])
         else:
             to = msg._safe_header_values('To', list(msg.To))
+            msg.To = to
 
         cc = []
         if msg.CC:
@@ -150,6 +151,7 @@ class RoyalMail(object):
                 cc = msg._safe_header_values('CC', [msg.CC])
             else:
                 cc = msg._safe_header_values('CC', list(msg.CC))
+                msg.CC = cc
 
         bcc = []
         if msg.BCC:
@@ -157,6 +159,7 @@ class RoyalMail(object):
                 bcc = msg._safe_header_values('BCC', [msg.BCC])
             else:
                 bcc = msg._safe_header_values('BCC', list(msg.BCC))
+                msg.BCC = bcc
 
         you = to + cc + bcc
         server.sendmail(me, you, msg.as_string())

@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-14
+
+- Preserved `To` and `CC` headers when one-shot recipient iterables are used,
+  while keeping iterator-backed BCC recipients envelope-only.
+
 ## 2026-06-13
 
 - Balanced `Manager` queue acknowledgements for normal work, failed sends, and

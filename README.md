@@ -61,7 +61,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
   and filename newline rejection, explicit ASCII MIME type tokens, ASCII
   Content-ID tokens, and TLS startup when `use_tls=True` without login
-  credentials.
+  credentials. One-shot `To`, `CC`, and `BCC` iterables are materialized once
+  so recipient headers and envelope delivery remain aligned while BCC stays
+  envelope-only.
 - `make check` runs a static manager contract on both runtimes and rejects
   mutations that remove, duplicate, relocate, or bypass queue acknowledgement.
 - `make check` also requires completed canonical plans under `docs/plans`.
@@ -126,6 +128,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   caller-resistant, location-independent dual-runtime Make root.
 - See `docs/plans/2026-06-14-send-typeerror-propagation.md` for single-attempt
   propagation of per-message send failures.
+- See `docs/plans/2026-06-14-recipient-iterator-header-preservation.md` for
+  aligned recipient headers and envelope delivery from one-shot iterables.
 
 ## Contributing
 

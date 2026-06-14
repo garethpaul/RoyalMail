@@ -19,6 +19,8 @@ MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-t
 PYTHON3_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-python3-compatibility.md')
 MAKE_ROOT_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-make-root-override-protection.md')
 SEND_TYPEERROR_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-send-typeerror-propagation.md')
+RECIPIENT_ITERATOR_PLAN = os.path.join(
+    DOCS_PLANS, '2026-06-14-recipient-iterator-header-preservation.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -48,6 +50,7 @@ for required_path in (
         PYTHON3_PLAN,
         MAKE_ROOT_PLAN,
         SEND_TYPEERROR_PLAN,
+        RECIPIENT_ITERATOR_PLAN,
         CI_WORKFLOW,
         README,
         ROYALMAIL_SOURCE,
@@ -125,6 +128,19 @@ if os.path.isfile(SEND_TYPEERROR_PLAN):
     if os.path.isfile(README) and rel(SEND_TYPEERROR_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(SEND_TYPEERROR_PLAN))
 
+if os.path.isfile(RECIPIENT_ITERATOR_PLAN):
+    recipient_iterator_plan = read(RECIPIENT_ITERATOR_PLAN)
+    for evidence in (
+            'Status: Completed',
+            'Python 2.7.18 and Python 3.12.8',
+            'hostile recipient mutations were rejected',
+            'repository and external-directory `make check` passed'):
+        if evidence not in recipient_iterator_plan:
+            failures.append('%s must record verification evidence %s' % (
+                rel(RECIPIENT_ITERATOR_PLAN), evidence))
+    if os.path.isfile(README) and rel(RECIPIENT_ITERATOR_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(RECIPIENT_ITERATOR_PLAN))
+
 if os.path.isfile(ROYALMAIL_SOURCE):
     source = read(ROYALMAIL_SOURCE)
     send_start = source.find('    def send(self, msg):')
@@ -182,6 +198,9 @@ if os.path.isfile(ROYALMAIL_SOURCE):
         'def _header_text(value, charset):',
         '_charset=self.charset',
         '            finally:\n                self.queue.task_done()',
+        '            msg.To = to',
+        '                msg.CC = cc',
+        '                msg.BCC = bcc',
     )
     for fragment in required_source_fragments:
         if fragment not in royalmail_source:
@@ -199,7 +218,10 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'test_unicode_subject_uses_declared_charset',
             'test_manager_acknowledges_shutdown_sentinel',
             'test_manager_acknowledges_message_and_shutdown_sentinel',
-            'self.assertEqual(0, manager.queue.unfinished_tasks)'):
+            'self.assertEqual(0, manager.queue.unfinished_tasks)',
+            'test_send_preserves_iterator_recipients_in_headers_and_envelope',
+            "self.assertIsNone(parsed['BCC'])",
+            "self.assertEqual(['bcc@example.com'], message.BCC)"):
         if fragment not in royalmail_tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 

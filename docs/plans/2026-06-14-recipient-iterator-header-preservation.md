@@ -1,6 +1,6 @@
 # Preserve Iterator-Backed Recipient Headers
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -65,3 +65,19 @@ Files: `README.md`, `CHANGES.md`
 - Do not alter attachment handling, message body encoding, SMTP authentication,
   TLS behavior, Manager queue behavior, or public method names.
 - Do not merge or close stacked pull requests without explicit authorization.
+
+## Verification Results
+
+- The focused regression and complete 24-test suite passed on host Python
+  2.7.18 and Python 3.12.8.
+- The repository and external-directory `make check` passed both runtime gates,
+  19 workflow mutations, and 7 manager mutations.
+- Seven hostile recipient mutations were rejected across `To`, `CC`, and `BCC`
+  retention, envelope assertions, BCC privacy, README indexing, and completed
+  plan evidence.
+- The cached digest-pinned, read-only, network-isolated Python 2.7.18 image
+  passed 24 tests, 19 workflow mutations, and 7 manager mutations. No cached
+  Python 3.12 image was available; host Python 3.12.8 and the exact-head hosted
+  matrix provide that compatibility evidence.
+- Exact-diff, bytecode/generated-artifact, conflict-marker, and changed-line
+  credential audits passed for the intended paths.
