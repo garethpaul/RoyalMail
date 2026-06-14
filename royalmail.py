@@ -123,12 +123,13 @@ class RoyalMail(object):
             if self._usr and self._pwd:
                 server.login(self._usr, self._pwd)
 
-            try:
-                num_msgs = len(msg)
-                for m in msg:
-                    self._send(server, m)
-            except TypeError:
-                self._send(server, msg)
+            if isinstance(msg, Message):
+                messages = (msg,)
+            else:
+                messages = msg
+
+            for message in messages:
+                self._send(server, message)
         finally:
             server.quit()
 

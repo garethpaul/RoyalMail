@@ -1,6 +1,6 @@
 # Preserve Per-Message Type Errors
 
-## Status: In Progress
+## Status: Completed
 
 ## Context
 
@@ -32,3 +32,17 @@ the original dispatch boundary and invoking `_send` twice.
 - digest-pinned read-only network-isolated Python 2.7 and Python 3.12 gates
 - hostile dispatch classification, retry, test, and completed-plan mutations
 - exact diff, bytecode/generated-artifact, and credential-pattern audits
+
+## Verification Results
+
+- The focused regression and complete 23-test suite passed on host Python 2.7.18 and Python 3.12.8.
+- The repository and external-directory `make check` passed after this
+  completed status was recorded.
+- Seven hostile dispatch mutations were rejected across the broad retry,
+  message classification, single-message wrapping, loop argument, static
+  implementation contract, regression assertion, and completed-plan status.
+- Digest-pinned, read-only, network-isolated Python 2.7.18 and Python 3.12.8
+  containers each passed their canonical runtime gate with 23 behavior tests,
+  19 workflow mutations, and 7 manager mutations.
+- Final exact-diff, bytecode/generated-artifact, and credential-pattern audits
+  found only the intended source, test, checker, and completed-plan changes.

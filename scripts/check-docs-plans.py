@@ -18,6 +18,7 @@ HOSTED_LEGACY_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-hosted-legacy-validati
 MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-token-guard.md')
 PYTHON3_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-python3-compatibility.md')
 MAKE_ROOT_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-make-root-override-protection.md')
+SEND_TYPEERROR_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-send-typeerror-propagation.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -46,6 +47,7 @@ for required_path in (
         MIMETYPE_TOKEN_PLAN,
         PYTHON3_PLAN,
         MAKE_ROOT_PLAN,
+        SEND_TYPEERROR_PLAN,
         CI_WORKFLOW,
         README,
         ROYALMAIL_SOURCE,
@@ -109,6 +111,44 @@ if os.path.isfile(MAKE_ROOT_PLAN):
             failures.append('%s must record verification evidence %s' % (rel(MAKE_ROOT_PLAN), evidence))
     if os.path.isfile(README) and rel(MAKE_ROOT_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(MAKE_ROOT_PLAN))
+
+if os.path.isfile(SEND_TYPEERROR_PLAN):
+    send_typeerror_plan = read(SEND_TYPEERROR_PLAN)
+    for evidence in (
+            'Status: Completed',
+            'Python 2.7.18 and Python 3.12.8',
+            'hostile dispatch mutations were rejected',
+            'repository and external-directory `make check` passed'):
+        if evidence not in send_typeerror_plan:
+            failures.append('%s must record verification evidence %s' % (
+                rel(SEND_TYPEERROR_PLAN), evidence))
+    if os.path.isfile(README) and rel(SEND_TYPEERROR_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(SEND_TYPEERROR_PLAN))
+
+if os.path.isfile(ROYALMAIL_SOURCE):
+    source = read(ROYALMAIL_SOURCE)
+    send_start = source.find('    def send(self, msg):')
+    send_end = source.find('    def _send(self, server, msg):', send_start)
+    send_source = source[send_start:send_end]
+    for fragment in (
+            'if isinstance(msg, Message):',
+            'messages = (msg,)',
+            'messages = msg',
+            'for message in messages:',
+            'self._send(server, message)'):
+        if fragment not in send_source:
+            failures.append('RoyalMail.send must contain %s' % fragment)
+    if 'except TypeError' in send_source:
+        failures.append('RoyalMail.send must not catch per-message TypeError')
+
+if os.path.isfile(ROYALMAIL_TESTS):
+    tests = read(ROYALMAIL_TESTS)
+    for fragment in (
+            'test_batch_send_propagates_message_typeerror_without_retrying_list',
+            "self.assertEqual([message], sender.attempted_messages)",
+            "self.assertEqual('quit', TrackingSMTP.instances[0].calls[-1])"):
+        if fragment not in tests:
+            failures.append('tests/test_royalmail.py must contain %s' % fragment)
 
 for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
     docs_path = os.path.join(ROOT, docs_file)

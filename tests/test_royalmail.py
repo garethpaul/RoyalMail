@@ -79,6 +79,16 @@ class TrackingFile(object):
         self.closed = True
 
 
+class TypeErrorTrackingRoyalMail(royalmail.RoyalMail):
+    def __init__(self):
+        royalmail.RoyalMail.__init__(self)
+        self.attempted_messages = []
+
+    def _send(self, server, message):
+        self.attempted_messages.append(message)
+        raise TypeError('message serialization failed')
+
+
 class RoyalMailTests(unittest.TestCase):
     def test_unicode_subject_uses_declared_charset(self):
         message = royalmail.Message(
@@ -461,6 +471,28 @@ class RoyalMailTests(unittest.TestCase):
 
         self.assertEqual(1, len(FailingSMTP.instances))
         self.assertTrue(FailingSMTP.instances[0].quit_called)
+
+    def test_batch_send_propagates_message_typeerror_without_retrying_list(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        TrackingSMTP.instances = []
+        royalmail.smtplib.SMTP = TrackingSMTP
+        sender = TypeErrorTrackingRoyalMail()
+
+        try:
+            with self.assertRaises(TypeError) as raised:
+                sender.send([message])
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual('message serialization failed', str(raised.exception))
+        self.assertEqual([message], sender.attempted_messages)
+        self.assertEqual('quit', TrackingSMTP.instances[0].calls[-1])
 
     def test_use_tls_starts_tls_without_login_credentials(self):
         message = royalmail.Message(
