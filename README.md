@@ -124,6 +124,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   manager queue completion across normal work and shutdown.
 - See `docs/plans/2026-06-14-make-root-override-protection.md` for the
   caller-resistant, location-independent dual-runtime Make root.
+- See `docs/plans/2026-06-14-send-typeerror-propagation.md` for single-attempt
+  propagation of per-message send failures.
 
 ## Contributing
 
