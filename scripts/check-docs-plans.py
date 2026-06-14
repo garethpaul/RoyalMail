@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import glob
 import os
+import re
 import sys
 
 from workflow_contract import validate as validate_workflow
@@ -16,8 +17,10 @@ CI_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-ci-baseline.md')
 HOSTED_LEGACY_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-hosted-legacy-validation.md')
 MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-token-guard.md')
 PYTHON3_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-python3-compatibility.md')
+MAKE_ROOT_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-make-root-override-protection.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
+README = os.path.join(ROOT, 'README.md')
 ROYALMAIL_SOURCE = os.path.join(ROOT, 'royalmail.py')
 ROYALMAIL_TESTS = os.path.join(ROOT, 'tests', 'test_royalmail.py')
 MANAGER_CONTRACT = os.path.join(ROOT, 'scripts', 'manager_contract.py')
@@ -42,7 +45,9 @@ for required_path in (
         HOSTED_LEGACY_PLAN,
         MIMETYPE_TOKEN_PLAN,
         PYTHON3_PLAN,
+        MAKE_ROOT_PLAN,
         CI_WORKFLOW,
+        README,
         ROYALMAIL_SOURCE,
         ROYALMAIL_TESTS,
         MANAGER_CONTRACT,
@@ -65,8 +70,15 @@ if os.path.isfile(CI_WORKFLOW):
 
 if os.path.isfile(MAKEFILE):
     makefile = read(MAKEFILE)
+    root_declaration = 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
+    root_assignments = [
+        line for line in makefile.splitlines()
+        if re.match(r'^(?:override\s+)?ROOT\s*[:?+]?=', line)
+    ]
+    if not makefile.startswith(root_declaration + '\n') or root_assignments != [root_declaration]:
+        failures.append('Makefile must define exactly one protected repository-derived ROOT declaration first')
     required_makefile_phrases = (
-        'ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))',
+        root_declaration,
         'PYTHON2 ?= python2',
         'PYTHON3 ?= python3',
         '$(PYTHON2) -B "$(ROOT)/scripts/check-docs-plans.py"',
@@ -85,6 +97,18 @@ if os.path.isfile(MAKEFILE):
 
     if 'command -v "$(PYTHON' in makefile or 'Skipping legacy Python 2' in makefile or 'Skipping Python 3' in makefile:
         failures.append('Makefile must require both runtime gates instead of skipping them')
+
+if os.path.isfile(MAKE_ROOT_PLAN):
+    make_root_plan = read(MAKE_ROOT_PLAN)
+    for evidence in (
+            'Status: Completed',
+            '`make ROOT=/tmp check` passed',
+            'Python 2.7.18 and Python 3.12.8',
+            'Six hostile mutations were rejected'):
+        if evidence not in make_root_plan:
+            failures.append('%s must record verification evidence %s' % (rel(MAKE_ROOT_PLAN), evidence))
+    if os.path.isfile(README) and rel(MAKE_ROOT_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(MAKE_ROOT_PLAN))
 
 for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
     docs_path = os.path.join(ROOT, docs_file)

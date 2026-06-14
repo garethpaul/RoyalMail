@@ -1,6 +1,6 @@
 # Make Root Override Protection
 
-## Status: Planned
+## Status: Completed
 
 ## Context
 
@@ -53,3 +53,24 @@ execution, digest-pinned containers, mutations, and integrity screening.
 - root-declaration, checker, plan-status, README-index, and evidence mutations
 - Python syntax, workflow contract, protected-file, secret, artifact, and
   `git diff --check` gates
+
+## Work Completed
+
+- Protected the Makefile-derived repository root from command-line and
+  environment overrides while preserving configurable runtime selection.
+- Added a Python 2/3-compatible exact declaration and completed-evidence
+  contract.
+- Preserved all mail, manager, workflow, and bytecode-free behavior boundaries.
+
+## Verification Results
+
+- `make check-python2`, `make check-python3`, and `make check` passed.
+- `make ROOT=/tmp check` passed from an external directory while still running
+  repository-owned Python 2 and Python 3 gates.
+- Digest-pinned, network-isolated, read-only Python 2.7.18 and Python 3.12.8
+  containers passed their canonical runtime gates.
+- Six hostile mutations were rejected across root declaration, checker
+  expectation, plan status, README indexing, and recorded evidence.
+- Python syntax, workflow contract, exact-base protected-file comparison,
+  secret screening, generated-artifact screening, and `git diff --check`
+  passed before shipping.
