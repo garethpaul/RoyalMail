@@ -603,6 +603,40 @@ class RoyalMailTests(unittest.TestCase):
         self.assertEqual([message.message_id], callbacks)
         self.assertEqual(0, manager.queue.unfinished_tasks)
 
+    def test_manager_sends_one_pass_iterable_batch_and_acknowledges_queue(self):
+        messages = [
+            royalmail.Message(
+                To='first@example.com',
+                From='from@example.com',
+                Subject='First',
+                Body='Body',
+            ),
+            royalmail.Message(
+                To='second@example.com',
+                From='from@example.com',
+                Subject='Second',
+                Body='Body',
+            ),
+        ]
+        sender = SuccessfulSender()
+        callbacks = []
+        manager = royalmail.Manager(RoyalMail=sender, callback=callbacks.append)
+        manager.queue.put(iter(messages))
+        manager.queue.put(None)
+
+        manager.run()
+
+        self.assertEqual(messages, sender.messages)
+        self.assertEqual(
+            [(True, 0, ''), (True, 0, '')],
+            [manager.results[message.message_id] for message in messages],
+        )
+        self.assertEqual(
+            [message.message_id for message in messages],
+            callbacks,
+        )
+        self.assertEqual(0, manager.queue.unfinished_tasks)
+
 
 if __name__ == '__main__':
     unittest.main()

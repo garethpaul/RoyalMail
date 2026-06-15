@@ -438,12 +438,15 @@ class Manager(threading.Thread):
                 if msg is None:
                     break
 
-                try:
-                    len(msg)
-                except TypeError:
-                    msg = [msg]
+                if isinstance(msg, Message):
+                    messages = (msg,)
+                else:
+                    try:
+                        messages = iter(msg)
+                    except TypeError:
+                        messages = (msg,)
 
-                for m in msg:
+                for m in messages:
                     try:
                         self.results[m.message_id] = (False, -1, '')
                         self.RoyalMail.send(m)

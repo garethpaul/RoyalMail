@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-15
+
+- Accepted one-pass iterable message batches in `Manager` while preserving
+  delivery order, callbacks, result records, and balanced queue completion.
+
 ## 2026-06-14
 
 - Preserved `To` and `CC` headers when one-shot recipient iterables are used,

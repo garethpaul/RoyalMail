@@ -63,7 +63,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   Content-ID tokens, and TLS startup when `use_tls=True` without login
   credentials. One-shot `To`, `CC`, and `BCC` iterables are materialized once
   so recipient headers and envelope delivery remain aligned while BCC stays
-  envelope-only.
+  envelope-only. Manager queues also accept one-pass iterable message batches
+  without probing their length or consuming them twice.
 - `make check` runs a static manager contract on both runtimes and rejects
   mutations that remove, duplicate, relocate, or bypass queue acknowledgement.
 - `make check` also requires completed canonical plans under `docs/plans`.
@@ -130,6 +131,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   propagation of per-message send failures.
 - See `docs/plans/2026-06-14-recipient-iterator-header-preservation.md` for
   aligned recipient headers and envelope delivery from one-shot iterables.
+- See `docs/plans/2026-06-15-manager-iterable-message-batches.md` for one-pass
+  Manager batch delivery and balanced queue completion.
 
 ## Contributing
 

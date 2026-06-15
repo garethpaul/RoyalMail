@@ -52,6 +52,9 @@ to ASCII MIME type tokens so parameters, whitespace, delimiters, controls, and
 non-ASCII bytes cannot become attachment header syntax.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
 if the relay does not require login credentials.
+Queued Manager batches may be one-pass iterables. They should be consumed once
+without length probing so delivery, callbacks, result records, and queue
+acknowledgements remain aligned.
 
 ## Dependency and Supply Chain Security
 

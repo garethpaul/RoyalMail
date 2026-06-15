@@ -1,6 +1,6 @@
 # Manager Iterable Message Batches
 
-Status: Planned
+Status: Completed
 
 ## Context
 
@@ -59,3 +59,23 @@ shutdown sentinel remains unfinished and batch messages are never sent.
 - `scripts/check-docs-plans.py`: protect the implementation and regression.
 - `README.md`, `SECURITY.md`, `VISION.md`, `CHANGES.md`: document the manager
   iterable boundary.
+
+## Work Completed
+
+- Replaced length-based queue-item classification with single-`Message`
+  detection and one-pass iterator handling.
+- Added a dual-runtime regression covering ordered delivery, result records,
+  callbacks, and balanced queue completion for an iterator-backed batch.
+- Added mutation-sensitive documentation checks for the implementation and
+  the complete focused regression contract.
+- Updated the README, security posture, vision, and change history.
+
+## Verification Results
+
+- The focused regression and complete 25-test suite passed on Python 2.7.18 and Python 3.12.8.
+- Syntax checks, 19 workflow mutations, and 7 manager mutations passed on both
+  supported runtimes.
+- Two hostile manager iterable mutations were rejected: restoring `len(msg)`
+  classification and removing the focused queue-completion assertion.
+- The repository and external-directory `make check` passed with bytecode
+  generation disabled.
