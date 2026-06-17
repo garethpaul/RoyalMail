@@ -23,6 +23,8 @@ RECIPIENT_ITERATOR_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-14-recipient-iterator-header-preservation.md')
 MANAGER_ITERABLE_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-15-manager-iterable-message-batches.md')
+SMTP_PRIMARY_ERROR_PLAN = os.path.join(
+    DOCS_PLANS, '2026-06-17-smtp-primary-error-preservation.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -54,6 +56,7 @@ for required_path in (
         SEND_TYPEERROR_PLAN,
         RECIPIENT_ITERATOR_PLAN,
         MANAGER_ITERABLE_PLAN,
+        SMTP_PRIMARY_ERROR_PLAN,
         CI_WORKFLOW,
         README,
         ROYALMAIL_SOURCE,
@@ -157,6 +160,20 @@ if os.path.isfile(MANAGER_ITERABLE_PLAN):
     if os.path.isfile(README) and rel(MANAGER_ITERABLE_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(MANAGER_ITERABLE_PLAN))
 
+if os.path.isfile(SMTP_PRIMARY_ERROR_PLAN):
+    smtp_primary_error_plan = read(SMTP_PRIMARY_ERROR_PLAN)
+    for evidence in (
+            'Status: Completed',
+            '27 tests passed on Python 2.7.18 and Python 3.12.8',
+            'hostile SMTP exception mutations were rejected',
+            'repository and external-directory `make check` passed',
+            'Exact diff'):
+        if evidence not in smtp_primary_error_plan:
+            failures.append('%s must record verification evidence %s' % (
+                rel(SMTP_PRIMARY_ERROR_PLAN), evidence))
+    if os.path.isfile(README) and rel(SMTP_PRIMARY_ERROR_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(SMTP_PRIMARY_ERROR_PLAN))
+
 if os.path.isfile(ROYALMAIL_SOURCE):
     source = read(ROYALMAIL_SOURCE)
     send_start = source.find('    def send(self, msg):')
@@ -172,13 +189,30 @@ if os.path.isfile(ROYALMAIL_SOURCE):
             failures.append('RoyalMail.send must contain %s' % fragment)
     if 'except TypeError' in send_source:
         failures.append('RoyalMail.send must not catch per-message TypeError')
+    for fragment in (
+            'delivery_error = None',
+            'except BaseException as error:',
+            'delivery_error = error',
+            'except BaseException:',
+            'if delivery_error is None:',
+            'if delivery_error is not None:',
+            'raise delivery_error'):
+        if fragment not in send_source:
+            failures.append('RoyalMail.send must preserve primary failures with %s' % fragment)
+    if send_source.count('server.quit()') != 1:
+        failures.append('RoyalMail.send must attempt SMTP cleanup exactly once')
 
 if os.path.isfile(ROYALMAIL_TESTS):
     tests = read(ROYALMAIL_TESTS)
     for fragment in (
             'test_batch_send_propagates_message_typeerror_without_retrying_list',
             "self.assertEqual([message], sender.attempted_messages)",
-            "self.assertEqual('quit', TrackingSMTP.instances[0].calls[-1])"):
+            "self.assertEqual('quit', TrackingSMTP.instances[0].calls[-1])",
+            'test_send_preserves_primary_failure_when_quit_also_fails',
+            "self.assertEqual('smtp send failed', str(raised.exception))",
+            'test_send_propagates_quit_failure_after_successful_delivery',
+            "self.assertEqual('smtp quit failed', str(raised.exception))",
+            'self.assertTrue(FailingQuitSMTP.instances[0].quit_called)'):
         if fragment not in tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 
@@ -193,6 +227,8 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document ASCII Content-ID tokens' % docs_file)
     if 'Python 3.12' not in docs:
         failures.append('%s must document the Python 3.12 compatibility gate' % docs_file)
+    if 'primary SMTP failure' not in docs:
+        failures.append('%s must document primary SMTP failure preservation' % docs_file)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     royalmail_source = read(ROYALMAIL_SOURCE)

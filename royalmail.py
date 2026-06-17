@@ -114,6 +114,7 @@ class RoyalMail(object):
         """
         server = smtplib.SMTP(self.host, self.port)
 
+        delivery_error = None
         try:
             if self.use_tls is True:
                 server.ehlo()
@@ -130,8 +131,17 @@ class RoyalMail(object):
 
             for message in messages:
                 self._send(server, message)
-        finally:
+        except BaseException as error:
+            delivery_error = error
+
+        try:
             server.quit()
+        except BaseException:
+            if delivery_error is None:
+                raise
+
+        if delivery_error is not None:
+            raise delivery_error
 
     def _send(self, server, msg):
         """

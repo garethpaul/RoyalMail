@@ -1,5 +1,10 @@
 # Changes
 
+## 2026-06-17
+
+- Preserved the primary SMTP failure when delivery and connection cleanup both
+  fail, while continuing to expose cleanup-only failures.
+
 ## 2026-06-15
 
 - Accepted one-pass iterable message batches in `Manager` while preserving

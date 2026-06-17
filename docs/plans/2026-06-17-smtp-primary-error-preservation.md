@@ -1,6 +1,6 @@
 # SMTP Primary Error Preservation
 
-Status: In Progress
+Status: Completed
 
 ## Context
 
@@ -61,3 +61,24 @@ shutdown therefore reports only the less useful shutdown error.
   supported Python lines.
 - Cleanup suppression must apply only when a primary send-path exception is
   already pending.
+
+## Work Completed
+
+- Preserved the active send-path exception across an unconditional SMTP cleanup
+  attempt without changing successful call ordering.
+- Kept cleanup-only exceptions visible while suppressing a competing cleanup
+  exception only when a primary failure is pending.
+- Added dual-runtime regressions, static contracts, documentation, and plan
+  evidence for both exception-precedence branches.
+
+## Verification Results
+
+- 27 tests passed on Python 2.7.18 and Python 3.12.8, including focused dual-
+  failure and cleanup-only regressions.
+- Eight hostile SMTP exception mutations were rejected across primary capture,
+  cleanup-only propagation, unconditional cleanup, source and test contracts,
+  guidance, completed status, and exact test evidence.
+- The projected final tree repository and external-directory `make check` passed
+  with bytecode generation disabled on both supported runtimes.
+- Exact diff, artifact, credential, conflict, mode, binary, dependency,
+  workflow, and upstream audits passed with only the eight intended paths.

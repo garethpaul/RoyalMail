@@ -64,7 +64,9 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   credentials. One-shot `To`, `CC`, and `BCC` iterables are materialized once
   so recipient headers and envelope delivery remain aligned while BCC stays
   envelope-only. Manager queues also accept one-pass iterable message batches
-  without probing their length or consuming them twice.
+  without probing their length or consuming them twice. SMTP cleanup still runs
+  after failures, while a primary SMTP failure remains visible if shutdown also
+  fails.
 - `make check` runs a static manager contract on both runtimes and rejects
   mutations that remove, duplicate, relocate, or bypass queue acknowledgement.
 - `make check` also requires completed canonical plans under `docs/plans`.
@@ -133,6 +135,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   aligned recipient headers and envelope delivery from one-shot iterables.
 - See `docs/plans/2026-06-15-manager-iterable-message-batches.md` for one-pass
   Manager batch delivery and balanced queue completion.
+- See `docs/plans/2026-06-17-smtp-primary-error-preservation.md` for primary
+  SMTP failure preservation across a competing cleanup failure.
 
 ## Contributing
 

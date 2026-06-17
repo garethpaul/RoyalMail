@@ -23,6 +23,7 @@ Priority:
 - Keep attachment file handles closed on MIME construction failures
 - Start TLS whenever callers request `use_tls=True`
 - Keep SMTP connections closed on send or login failures
+- Preserve the primary SMTP failure when connection cleanup also fails
 - Reject newline characters in message headers and SMTP envelope addresses
 - Reject newline characters in attachment Content-ID headers
 - Restrict attachment identifiers to ASCII Content-ID tokens before file reads

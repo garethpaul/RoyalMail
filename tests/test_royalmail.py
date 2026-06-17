@@ -30,6 +30,25 @@ class FailingSMTP(object):
         self.quit_called = True
 
 
+class FailingQuitSMTP(object):
+    instances = []
+    fail_send = False
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.quit_called = False
+        FailingQuitSMTP.instances.append(self)
+
+    def sendmail(self, sender, recipients, payload):
+        if self.fail_send:
+            raise RuntimeError('smtp send failed')
+
+    def quit(self):
+        self.quit_called = True
+        raise RuntimeError('smtp quit failed')
+
+
 class TrackingSMTP(object):
     instances = []
 
@@ -471,6 +490,50 @@ class RoyalMailTests(unittest.TestCase):
 
         self.assertEqual(1, len(FailingSMTP.instances))
         self.assertTrue(FailingSMTP.instances[0].quit_called)
+
+    def test_send_preserves_primary_failure_when_quit_also_fails(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        FailingQuitSMTP.instances = []
+        FailingQuitSMTP.fail_send = True
+        royalmail.smtplib.SMTP = FailingQuitSMTP
+
+        try:
+            with self.assertRaises(RuntimeError) as raised:
+                royalmail.RoyalMail('smtp.example.com', 2525).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual('smtp send failed', str(raised.exception))
+        self.assertEqual(1, len(FailingQuitSMTP.instances))
+        self.assertTrue(FailingQuitSMTP.instances[0].quit_called)
+
+    def test_send_propagates_quit_failure_after_successful_delivery(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        FailingQuitSMTP.instances = []
+        FailingQuitSMTP.fail_send = False
+        royalmail.smtplib.SMTP = FailingQuitSMTP
+
+        try:
+            with self.assertRaises(RuntimeError) as raised:
+                royalmail.RoyalMail('smtp.example.com', 2525).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual('smtp quit failed', str(raised.exception))
+        self.assertEqual(1, len(FailingQuitSMTP.instances))
+        self.assertTrue(FailingQuitSMTP.instances[0].quit_called)
 
     def test_batch_send_propagates_message_typeerror_without_retrying_list(self):
         message = royalmail.Message(
