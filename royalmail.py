@@ -30,8 +30,20 @@ Sample code:
 """
 import smtplib
 import threading
-import Queue
 import uuid
+import re
+
+try:
+    import Queue
+except ImportError:
+    import queue as Queue
+
+try:
+    string_types = (basestring,)
+    text_type = unicode
+except NameError:
+    string_types = (str,)
+    text_type = str
 
 # this is to support name changes
 # from version 2.4 to version 2.5
@@ -59,6 +71,19 @@ import mimetypes
 import time
 
 from os import path
+
+MIME_TOKEN_RE = re.compile(r"^[A-Za-z0-9!#$%&'*+.^_`|~-]+$")
+CONTENT_ID_RE = re.compile(
+    r"^[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+"
+    r"(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*"
+    r"(?:@[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+"
+    r"(?:\.[A-Za-z0-9!#$%&'*+\-/=?^_`{|}~]+)*)?\Z")
+
+
+def _header_text(value, charset):
+    if isinstance(value, text_type):
+        return value
+    return value.decode(charset)
 
 class RoyalMail(object):
     """
@@ -89,6 +114,7 @@ class RoyalMail(object):
         """
         server = smtplib.SMTP(self.host, self.port)
 
+        delivery_error = None
         try:
             if self.use_tls is True:
                 server.ehlo()
@@ -98,14 +124,30 @@ class RoyalMail(object):
             if self._usr and self._pwd:
                 server.login(self._usr, self._pwd)
 
-            try:
-                num_msgs = len(msg)
-                for m in msg:
-                    self._send(server, m)
-            except TypeError:
-                self._send(server, msg)
-        finally:
+            if isinstance(msg, Message):
+                messages = (msg,)
+            else:
+                messages = msg
+
+            for message in messages:
+                self._send(server, message)
+        except BaseException as error:
+            delivery_error = error
+
+        cleanup_error = None
+        try:
             server.quit()
+        except BaseException as error:
+            cleanup_error = error
+            try:
+                server.close()
+            except BaseException:
+                pass
+
+        if delivery_error is not None:
+            raise delivery_error
+        if cleanup_error is not None:
+            raise cleanup_error
 
     def _send(self, server, msg):
         """
@@ -113,27 +155,32 @@ class RoyalMail(object):
         we created in send()
         """
         me = msg._safe_header_value('From', msg.From)
-        if isinstance(msg.To, basestring):
+        if isinstance(msg.To, string_types):
             to = msg._safe_header_values('To', [msg.To])
         else:
             to = msg._safe_header_values('To', list(msg.To))
+            msg.To = to
 
         cc = []
         if msg.CC:
-            if isinstance(msg.CC, basestring):
+            if isinstance(msg.CC, string_types):
                 cc = msg._safe_header_values('CC', [msg.CC])
             else:
                 cc = msg._safe_header_values('CC', list(msg.CC))
+                msg.CC = cc
 
         bcc = []
         if msg.BCC:
-            if isinstance(msg.BCC, basestring):
+            if isinstance(msg.BCC, string_types):
                 bcc = msg._safe_header_values('BCC', [msg.BCC])
             else:
                 bcc = msg._safe_header_values('BCC', list(msg.BCC))
+                msg.BCC = bcc
 
         you = to + cc + bcc
-        server.sendmail(me, you, msg.as_string())
+        refused = server.sendmail(me, you, msg.as_string())
+        if refused:
+            raise smtplib.SMTPRecipientsRefused(refused)
 
 class Message(object):
     """
@@ -159,20 +206,7 @@ class Message(object):
         self.attachments = []
         if attachments:
             for attachment in attachments:
-                if isinstance(attachment, basestring):
-                    self.attachments.append((attachment, None, None))
-                else:
-                    try:
-                        filename, cid, mimetype = attachment
-                    except (TypeError, ValueError):
-                        try:
-                            filename, cid = attachment
-                        except (TypeError, ValueError):
-                            self.attachments.append((attachment, None, None))
-                        else:
-                            self.attachments.append((filename, cid, None))
-                    else:
-                        self.attachments.append((filename, cid, mimetype))
+                self.attachments.append(self._attachment_details(attachment))
         self.To = To
         self.CC = CC
         self.BCC = BCC
@@ -189,6 +223,20 @@ class Message(object):
 
     def make_key(self):
         return str(uuid.uuid4())
+
+    def _attachment_details(self, attachment):
+        if isinstance(attachment, string_types):
+            return (attachment, None, None)
+        try:
+            values = iter(attachment)
+        except TypeError:
+            return (attachment, None, None)
+        values = tuple(values)
+        if len(values) == 2:
+            return (values[0], values[1], None)
+        if len(values) == 3:
+            return values
+        raise ValueError('Attachment descriptors must contain two or three values')
 
     def as_string(self):
         """Get the email as a string to send in the RoyalMail"""
@@ -227,18 +275,18 @@ class Message(object):
         if self.charset == 'us-ascii':
             msg['Subject'] = subject
         else:
-            msg['Subject'] = str(make_header([(unicode(subject, self.charset), self.charset)]))
+            msg['Subject'] = str(make_header([(_header_text(subject, self.charset), self.charset)]))
 
         msg['From'] = self._safe_header_value('From', self.From)
 
-        if isinstance(self.To, basestring):
+        if isinstance(self.To, string_types):
             msg['To'] = self._safe_header_value('To', self.To)
         else:
             self.To = self._safe_header_values('To', list(self.To))
             msg['To'] = ", ".join(self.To)
 
         if self.CC:
-            if isinstance(self.CC, basestring):
+            if isinstance(self.CC, string_types):
                 msg['CC'] = self._safe_header_value('CC', self.CC)
             else:
                 self.CC = self._safe_header_values('CC', list(self.CC))
@@ -247,7 +295,7 @@ class Message(object):
         msg['Date'] = self._safe_header_value('Date', self.Date)
 
     def _safe_header_value(self, name, value):
-        if isinstance(value, basestring) and ('\n' in value or '\r' in value):
+        if isinstance(value, string_types) and ('\n' in value or '\r' in value):
             raise ValueError('%s header must not contain newlines' % name)
         return value
 
@@ -255,14 +303,25 @@ class Message(object):
         return [self._safe_header_value(name, value) for value in values]
 
     def _safe_mimetype(self, mimetype):
-        if not isinstance(mimetype, basestring):
+        if not isinstance(mimetype, string_types):
             raise ValueError('Attachment mimetype must be a string')
         if '\n' in mimetype or '\r' in mimetype:
             raise ValueError('Attachment mimetype must not contain newlines')
         parts = mimetype.split('/')
-        if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise ValueError('Attachment mimetype must use maintype/subtype')
+        if (len(parts) != 2 or
+                not MIME_TOKEN_RE.match(parts[0]) or
+                not MIME_TOKEN_RE.match(parts[1])):
+            raise ValueError('Attachment mimetype must use ASCII maintype/subtype tokens')
         return mimetype
+
+    def _safe_content_id(self, cid):
+        if not isinstance(cid, string_types):
+            raise ValueError('Content-ID must be a string')
+        if '\n' in cid or '\r' in cid:
+            raise ValueError('Content-ID header must not contain newlines')
+        if not CONTENT_ID_RE.match(cid):
+            raise ValueError('Content-ID must use printable ASCII msg-id token characters')
+        return cid
 
     def _multipart(self):
         """The email has attachments"""
@@ -296,8 +355,8 @@ class Message(object):
         """
         If mimetype is None, it will try to guess the mimetype
         """
-        if cid:
-            cid = self._safe_header_value('Content-ID', cid)
+        if cid is not None:
+            cid = self._safe_content_id(cid)
             attachment_name = None
         else:
             attachment_name = self._safe_header_value(
@@ -321,7 +380,7 @@ class Message(object):
 
         if maintype == 'text':
             # Note: we should handle calculating the charset
-            msg = MIMEText(payload, _subtype=subtype)
+            msg = MIMEText(payload, _subtype=subtype, _charset=self.charset)
         elif maintype == 'image':
             msg = MIMEImage(payload, _subtype=subtype)
         elif maintype == 'audio':
@@ -333,7 +392,7 @@ class Message(object):
             encoders.encode_base64(msg)
 
         # Set the content-ID header
-        if cid:
+        if cid is not None:
             msg.add_header('Content-ID', '<%s>' % cid)
             msg.add_header('Content-Disposition', 'inline')
         else:
@@ -368,10 +427,13 @@ class Manager(threading.Thread):
 
         self.queue = Queue.Queue()
         self.RoyalMail = RoyalMail
-        self.abort = False
+        self._abort = False
+        self._stop_enqueued = False
         self.callback = callback
         self._results = {}
         self._result_lock = threading.RLock()
+        self._state_lock = threading.RLock()
+        self._worker_error = None
 
         if self.RoyalMail is None:
             sender_cls = globals()['RoyalMail']
@@ -390,44 +452,100 @@ class Manager(threading.Thread):
         else:
             return None
 
+    @property
+    def abort(self):
+        with self._state_lock:
+            return self._abort
+
+    @abort.setter
+    def abort(self, value):
+        if value:
+            self._request_stop()
+        else:
+            with self._state_lock:
+                if not self._stop_enqueued:
+                    self._abort = False
+
+    def _request_stop(self):
+        with self._state_lock:
+            if self._stop_enqueued:
+                return
+            self._abort = True
+            self._stop_enqueued = True
+            self.queue.put(None)
+
+    def _record_worker_error(self, error):
+        with self._state_lock:
+            if self._worker_error is None:
+                self._worker_error = error
+
+    def _set_result(self, message_id, result):
+        with self._result_lock:
+            self._results[message_id] = result
+
+    def _send_message(self, message):
+        message_id = message.message_id
+        self._set_result(message_id, (False, -1, ''))
+        try:
+            self.RoyalMail.send(message)
+            self._set_result(message_id, (True, 0, ''))
+        except Exception as error:
+            if len(error.args) >= 2:
+                err_code, err_message = error.args[0], error.args[1]
+            elif len(error.args) == 1:
+                err_code, err_message = -1, error.args[0]
+            else:
+                err_code, err_message = -1, error.__class__.__name__
+            self._set_result(message_id, (False, err_code, err_message))
+
+        if self.callback:
+            try:
+                self.callback(message_id)
+            except:
+                pass
+
     def run(self):
 
-        while self.abort is False:
+        while True:
             msg = self.queue.get(block=True)
-            if msg is None:
-                break
-
             try:
-                num_msgs = len(msg)
-            except TypeError:
-                num_msgs = 1
-                msg = [msg]
+                if msg is None:
+                    with self._state_lock:
+                        self._abort = True
+                        self._stop_enqueued = True
+                    break
 
-            for m in msg:
                 try:
-                    self.results[m.message_id] = (False, -1, '')
-                    self.RoyalMail.send(m)
-                    self.results[m.message_id] = (True, 0, '')
-
-                except Exception as e:
-                    if len(e.args) >= 2:
-                        err_code, err_message = e.args[0], e.args[1]
-                    elif len(e.args) == 1:
-                        err_code, err_message = -1, e.args[0]
+                    if isinstance(msg, Message):
+                        messages = (msg,)
                     else:
-                        err_code, err_message = -1, e.__class__.__name__
+                        try:
+                            messages = iter(msg)
+                        except TypeError:
+                            messages = (msg,)
 
-                    self.results[m.message_id] = (False, err_code, err_message)
+                    for message in messages:
+                        self._send_message(message)
+                except Exception as error:
+                    self._record_worker_error(error)
 
-                if self.callback:
-                    try:
-                        self.callback(m.message_id)
-                    except:
-                        pass
-
-            # endfor
-
-            self.queue.task_done()
+            finally:
+                self.queue.task_done()
 
     def send(self, msg):
-        self.queue.put(msg)
+        if msg is None:
+            self._request_stop()
+            return
+        with self._state_lock:
+            if self._abort:
+                raise RuntimeError('Manager has been stopped')
+            self.queue.put(msg)
+
+    def join(self, timeout=None):
+        threading.Thread.join(self, timeout)
+        if self.is_alive():
+            return
+        with self._state_lock:
+            worker_error = self._worker_error
+        if worker_error is not None:
+            raise worker_error

@@ -29,8 +29,10 @@ Helpful reports include:
 - Review found network clients, sockets, web APIs, or service endpoints; changes in those areas should receive security-focused review before merge.
 - Review found file, document, data, or media parsing flows; changes in those areas should receive security-focused review before merge.
 - No primary dependency manifest was detected in the repository root. If dependencies are added later, include a manifest and prefer reproducible installation instructions.
-- GitHub Actions runs the full gate in a digest-pinned Python 2.7.18 container;
-  legacy syntax and unit-test failures cannot be skipped.
+- GitHub Actions runs the shared behavior gate in digest-pinned Python 2.7.18
+  and Python 3.12.8 containers; credential persistence is disabled,
+  permissions are read-only, and neither runtime's syntax, unit-test, or
+  workflow-policy failures can be skipped.
 
 ## Service and API Notes
 
@@ -39,12 +41,28 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 Message headers, SMTP envelope addresses, and attachment Content-ID headers
 should reject carriage returns and line feeds so untrusted values cannot inject
 additional email headers or recipients.
+Attachment Content-ID values are restricted to ASCII Content-ID tokens so
+brackets, whitespace, controls, and non-ASCII bytes cannot corrupt msg-id
+header syntax.
 Attachment basenames used in `Content-Disposition` parameters should reject
 the same newline characters before the attachment file is read.
 Explicit attachment mimetypes should also reject malformed values and newline
-characters before MIME headers are constructed.
+characters before MIME headers are constructed. Both components are restricted
+to ASCII MIME type tokens so parameters, whitespace, delimiters, controls, and
+non-ASCII bytes cannot become attachment header syntax.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
 if the relay does not require login credentials.
+SMTP cleanup should always be attempted, but a primary SMTP failure must remain
+visible if the server also fails while closing the connection. A failed SMTP
+QUIT exchange should fall back to direct socket close. Partial recipient
+refusals must remain visible because some recipients may accept a message while
+others reject it; callers should inspect the refusal mapping rather than blindly
+retrying every recipient.
+Queued Manager batches may be one-pass iterables. They should be consumed once
+without length probing so delivery, callbacks, result records, and queue
+acknowledgements remain aligned. Stop signaling should wake blocked workers,
+remain idempotent, reject later submissions, and surface iterator-level worker
+failures without stranding queued tasks.
 
 ## Dependency and Supply Chain Security
 

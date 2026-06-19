@@ -1,18 +1,61 @@
 # Changes
 
+## 2026-06-19
+
+- Surfaced partial SMTP recipient refusals and added direct socket cleanup when
+  SMTP `quit()` fails without masking delivery, TLS, or authentication errors.
+- Preserved two-field one-pass attachment descriptors and their internal
+  `TypeError` failures.
+- Made Manager stop signaling idempotent, woke blocked workers, rejected work
+  after stop, drained later queue items after batch iterator failures, and
+  surfaced worker failures from `join()`.
+- Added 35 cross-runtime behavior tests plus 12 manager, 8 SMTP, and 19 workflow
+  hostile mutations.
+
+## 2026-06-17
+
+- Preserved the primary SMTP failure when delivery and connection cleanup both
+  fail, while continuing to expose cleanup-only failures.
+
+## 2026-06-15
+
+- Accepted one-pass iterable message batches in `Manager` while preserving
+  delivery order, callbacks, result records, and balanced queue completion.
+
+## 2026-06-14
+
+- Preserved `To` and `CC` headers when one-shot recipient iterables are used,
+  while keeping iterator-backed BCC recipients envelope-only.
+
+## 2026-06-13
+
+- Balanced `Manager` queue acknowledgements for normal work, failed sends, and
+  the shutdown sentinel, with deterministic cross-runtime and mutation tests.
+- Restricted caller-supplied attachment identifiers to ASCII Content-ID tokens
+  before file reads, preserving common dot-atom and `name@domain` values.
+
+## 2026-06-12
+
+- Added Python 3.12 compatibility without dropping Python 2.7, running the same
+  18 message, attachment, SMTP, and manager tests in both digest-pinned GitHub
+  Actions containers.
+- Restricted explicit attachment maintypes and subtypes to ASCII MIME type
+  tokens before MIME construction or file reads, with Python 2 regression and
+  checker coverage.
+
 ## 2026-06-10
 
 - Rejected newline characters in attachment filenames before file reads or
   `Content-Disposition` header serialization, with Python 2 regression coverage.
 - Added a least-privilege GitHub Actions workflow that runs `make check` on
-  pushes, pull requests, and manual dispatches with checkout pinned by commit.
-- Kept the Python 3 documentation guard mandatory on hosted runners while
-  allowing explicit skips only for unavailable legacy Python 2 checks.
-- Replaced the skip-based job with full syntax and unit-test validation in a
-  digest-pinned Python 2.7.18 container.
+  pushes, pull requests, and manual dispatches with credential-free checkout
+  pinned by commit.
+- Replaced the prepared skip-based job with full syntax, contract, and unit-test
+  validation in a digest-pinned Python 2.7.18 container.
 - Made `make check` root-independent and fail when Python 2 is unavailable.
-- Added checker coverage for the workflow permissions, timeout, commands,
-  completed CI plan, and Makefile interpreter split.
+- Added exact workflow-policy validation and 15 hostile mutations covering
+  triggers, credentials, actions, permissions, runner, timeout, image digest,
+  failure handling, runtime proof, and the canonical command.
 
 ## 2026-06-09
 

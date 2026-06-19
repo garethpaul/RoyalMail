@@ -17,7 +17,7 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `docs/plans` - completed maintenance plans for the current baseline
 - `plans` - historical implementation notes
 - `scripts` - documentation-plan validators
-- `tests` - Python 2 unit tests for email composition and sender behavior
+- `tests` - shared Python 2 and Python 3 unit tests for email composition and sender behavior
 - `royalmail.py` - email composition and SMTP sender implementation
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
@@ -34,6 +34,7 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- Python 2.7.18 and Python 3.12 for the complete local compatibility gate
 
 ### Setup
 
@@ -50,20 +51,36 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
-- `make check` runs Python 2 syntax checks and unit tests for plain text, HTML,
+- `make check` runs the same syntax checks and unit tests on Python 2 and Python
+  3 for plain text, HTML,
   attachment, envelope, header-injection rejection, SMTP cleanup, and manager
   behavior, including no-argument sender exception recording and attachment
-  file cleanup when MIME construction fails. Attachment tests also cover
+  file cleanup when MIME construction fails. Manager coverage also verifies
+  that normal work and the shutdown sentinel leave queue completion balanced.
+  Attachment tests also cover
   constructor-supplied `(filename, cid, mimetype)` tuples and Content-ID
-  and filename newline rejection, explicit attachment mimetype validation, and
-  TLS startup when `use_tls=True` without login credentials.
+  and filename newline rejection, explicit ASCII MIME type tokens, ASCII
+  Content-ID tokens, and TLS startup when `use_tls=True` without login
+  credentials. One-shot `To`, `CC`, and `BCC` iterables are materialized once
+  so recipient headers and envelope delivery remain aligned while BCC stays
+  envelope-only. Manager queues also accept one-pass iterable message batches
+  without probing their length or consuming them twice. SMTP cleanup still runs
+  after failures, while a primary SMTP failure remains visible if shutdown also
+  fails. Partial recipient refusals are surfaced, failed SMTP `quit()` calls
+  fall back to direct socket close, and stopped Manager workers reject new work
+  while reporting iterator-level failures from `join()`.
+- `make check` runs a static manager contract on both runtimes and rejects
+  mutations that remove, duplicate, relocate, or bypass queue acknowledgement,
+  stop signaling, or worker-error propagation. It also rejects SMTP mutations
+  that hide refusal results, mask primary errors, or remove cleanup fallback.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
-- GitHub Actions runs `make check` through `.github/workflows/check.yml`.
-  The job uses a digest-pinned Python 2.7.18 container and fails if syntax,
-  unit tests, or repository contracts fail; the canonical gate never skips an
-  unavailable legacy runtime.
+- GitHub Actions runs explicit Python 2 and Python 3 targets through
+  `.github/workflows/check.yml`. The jobs use digest-pinned Python 2.7.18 and
+  Python 3.12.8 containers, credential-free pinned checkout, and read-only
+  permissions. They fail if syntax, unit tests, repository contracts, or
+  workflow-policy mutation tests fail; neither runtime can be skipped.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -106,6 +123,26 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Python 2.7 hosted validation boundary.
 - See `docs/plans/2026-06-10-attachment-filename-header-guard.md` for
   attachment filename newline rejection.
+- See `docs/plans/2026-06-12-attachment-mimetype-token-guard.md` for explicit
+  ASCII MIME type tokens enforced before attachment files are read.
+- See `docs/plans/2026-06-12-python3-compatibility.md` for the shared Python
+  2.7 and Python 3.12 behavior and hosted validation contract.
+- See `docs/plans/2026-06-13-attachment-content-id-token-guard.md` for ASCII
+  Content-ID tokens enforced before attachment files are read.
+- See `docs/plans/2026-06-13-manager-sentinel-queue-completion.md` for balanced
+  manager queue completion across normal work and shutdown.
+- See `docs/plans/2026-06-14-make-root-override-protection.md` for the
+  caller-resistant, location-independent dual-runtime Make root.
+- See `docs/plans/2026-06-14-send-typeerror-propagation.md` for single-attempt
+  propagation of per-message send failures.
+- See `docs/plans/2026-06-14-recipient-iterator-header-preservation.md` for
+  aligned recipient headers and envelope delivery from one-shot iterables.
+- See `docs/plans/2026-06-15-manager-iterable-message-batches.md` for one-pass
+  Manager batch delivery and balanced queue completion.
+- See `docs/plans/2026-06-17-smtp-primary-error-preservation.md` for primary
+  SMTP failure preservation across a competing cleanup failure.
+- See `docs/plans/2026-06-19-royalmail-deep-review.md` for partial-refusal,
+  cleanup-fallback, attachment-iterator, and Manager lifecycle remediation.
 
 ## Contributing
 

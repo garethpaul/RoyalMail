@@ -1,19 +1,47 @@
-ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
-PYTHON ?= python2
+PYTHON2 ?= python2
+PYTHON3 ?= python3
 export PYTHONDONTWRITEBYTECODE = 1
 
-.PHONY: build check lint test verify
+.PHONY: build check check-python2 check-python3 contract-test contract-test-python2 contract-test-python3 lint lint-python2 lint-python3 test test-python2 test-python3 verify
 
-lint:
-	$(PYTHON) -B "$(ROOT)/scripts/check-docs-plans.py"
-	cd "$(ROOT)" && $(PYTHON) -B -c 'compile(open("royalmail.py").read(), "royalmail.py", "exec")'
+lint-python2:
+	$(PYTHON2) -B "$(ROOT)/scripts/check-docs-plans.py"
+	cd "$(ROOT)" && $(PYTHON2) -B -c 'compile(open("royalmail.py").read(), "royalmail.py", "exec")'
 
-test:
-	cd "$(ROOT)" && $(PYTHON) -B -m unittest discover -s tests
+lint-python3:
+	$(PYTHON3) -B "$(ROOT)/scripts/check-docs-plans.py"
+	cd "$(ROOT)" && $(PYTHON3) -B -c 'compile(open("royalmail.py").read(), "royalmail.py", "exec")'
+
+lint: lint-python2 lint-python3
+
+contract-test-python2:
+	$(PYTHON2) -B "$(ROOT)/scripts/test_workflow_contract.py"
+	$(PYTHON2) -B "$(ROOT)/scripts/test_manager_contract.py"
+	$(PYTHON2) -B "$(ROOT)/scripts/test_smtp_contract.py"
+
+contract-test-python3:
+	$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"
+	$(PYTHON3) -B "$(ROOT)/scripts/test_manager_contract.py"
+	$(PYTHON3) -B "$(ROOT)/scripts/test_smtp_contract.py"
+
+contract-test: contract-test-python2 contract-test-python3
+
+test-python2:
+	cd "$(ROOT)" && $(PYTHON2) -B -m unittest discover -s tests
+
+test-python3:
+	cd "$(ROOT)" && $(PYTHON3) -B -m unittest discover -s tests
+
+test: test-python2 test-python3
 
 build: lint
 
-verify: lint test
+check-python2: lint-python2 contract-test-python2 test-python2
+
+check-python3: lint-python3 contract-test-python3 test-python3
+
+verify: check-python2 check-python3
 
 check: verify
