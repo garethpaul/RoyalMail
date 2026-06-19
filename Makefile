@@ -19,10 +19,12 @@ lint: lint-python2 lint-python3
 contract-test-python2:
 	$(PYTHON2) -B "$(ROOT)/scripts/test_workflow_contract.py"
 	$(PYTHON2) -B "$(ROOT)/scripts/test_manager_contract.py"
+	$(PYTHON2) -B "$(ROOT)/scripts/test_smtp_contract.py"
 
 contract-test-python3:
 	$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"
 	$(PYTHON3) -B "$(ROOT)/scripts/test_manager_contract.py"
+	$(PYTHON3) -B "$(ROOT)/scripts/test_smtp_contract.py"
 
 contract-test: contract-test-python2 contract-test-python3
 

@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 import unittest
 from email import message_from_string
 
@@ -38,6 +39,7 @@ class FailingQuitSMTP(object):
         self.host = host
         self.port = port
         self.quit_called = False
+        self.close_called = False
         FailingQuitSMTP.instances.append(self)
 
     def sendmail(self, sender, recipients, payload):
@@ -47,6 +49,62 @@ class FailingQuitSMTP(object):
     def quit(self):
         self.quit_called = True
         raise RuntimeError('smtp quit failed')
+
+    def close(self):
+        self.close_called = True
+
+
+class RefusingSMTP(object):
+    instances = []
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.calls = []
+        RefusingSMTP.instances.append(self)
+
+    def sendmail(self, sender, recipients, payload):
+        self.calls.append(('sendmail', sender, recipients, payload))
+        return {'refused@example.com': (550, 'mailbox unavailable')}
+
+    def quit(self):
+        self.calls.append('quit')
+
+
+class FailingSetupSMTP(object):
+    instances = []
+    fail_stage = None
+    fail_quit = False
+
+    def __init__(self, host, port):
+        self.host = host
+        self.port = port
+        self.calls = []
+        FailingSetupSMTP.instances.append(self)
+
+    def ehlo(self):
+        self.calls.append('ehlo')
+
+    def starttls(self):
+        self.calls.append('starttls')
+        if self.fail_stage == 'starttls':
+            raise RuntimeError('smtp tls failed')
+
+    def login(self, usr, pwd):
+        self.calls.append(('login', usr, pwd))
+        if self.fail_stage == 'login':
+            raise RuntimeError('smtp login failed')
+
+    def sendmail(self, sender, recipients, payload):
+        self.calls.append(('sendmail', sender, recipients, payload))
+
+    def quit(self):
+        self.calls.append('quit')
+        if self.fail_quit:
+            raise RuntimeError('smtp quit failed')
+
+    def close(self):
+        self.calls.append('close')
 
 
 class TrackingSMTP(object):
@@ -212,6 +270,44 @@ class RoyalMailTests(unittest.TestCase):
             if fd is not None:
                 os.close(fd)
             os.remove(attachment_path)
+
+    def test_constructor_consumes_one_pass_attachment_descriptor_once(self):
+        fd, attachment_path = tempfile.mkstemp(suffix='.txt')
+        try:
+            os.write(fd, b'attachment body')
+            os.close(fd)
+            fd = None
+            descriptor = (value for value in (attachment_path, None))
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[descriptor],
+            )
+
+            parsed = message_from_string(message.as_string())
+            attachment = parsed.get_payload()[1]
+
+            self.assertEqual('text/plain', attachment.get_content_type())
+            self.assertEqual(
+                'attachment body',
+                attachment.get_payload(decode=True).decode('ascii'),
+            )
+        finally:
+            if fd is not None:
+                os.close(fd)
+            os.remove(attachment_path)
+
+    def test_constructor_preserves_attachment_iterator_typeerror(self):
+        def broken_descriptor():
+            yield 'attachment.txt'
+            raise TypeError('attachment descriptor failed')
+
+        with self.assertRaises(TypeError) as raised:
+            royalmail.Message(attachments=[broken_descriptor()])
+
+        self.assertEqual('attachment descriptor failed', str(raised.exception))
 
     def test_attachment_accepts_vendor_mimetype_tokens(self):
         fd, attachment_path = tempfile.mkstemp(suffix='.royalmail')
@@ -512,6 +608,7 @@ class RoyalMailTests(unittest.TestCase):
         self.assertEqual('smtp send failed', str(raised.exception))
         self.assertEqual(1, len(FailingQuitSMTP.instances))
         self.assertTrue(FailingQuitSMTP.instances[0].quit_called)
+        self.assertTrue(FailingQuitSMTP.instances[0].close_called)
 
     def test_send_propagates_quit_failure_after_successful_delivery(self):
         message = royalmail.Message(
@@ -534,6 +631,82 @@ class RoyalMailTests(unittest.TestCase):
         self.assertEqual('smtp quit failed', str(raised.exception))
         self.assertEqual(1, len(FailingQuitSMTP.instances))
         self.assertTrue(FailingQuitSMTP.instances[0].quit_called)
+        self.assertTrue(FailingQuitSMTP.instances[0].close_called)
+
+    def test_send_rejects_partial_recipient_refusal(self):
+        message = royalmail.Message(
+            To=['accepted@example.com', 'refused@example.com'],
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        RefusingSMTP.instances = []
+        royalmail.smtplib.SMTP = RefusingSMTP
+
+        try:
+            with self.assertRaises(royalmail.smtplib.SMTPRecipientsRefused) as raised:
+                royalmail.RoyalMail('smtp.example.com', 2525).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual(
+            {'refused@example.com': (550, 'mailbox unavailable')},
+            raised.exception.recipients,
+        )
+        self.assertEqual('quit', RefusingSMTP.instances[0].calls[-1])
+
+    def test_tls_failure_survives_quit_failure_and_forces_close(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        FailingSetupSMTP.instances = []
+        FailingSetupSMTP.fail_stage = 'starttls'
+        FailingSetupSMTP.fail_quit = True
+        royalmail.smtplib.SMTP = FailingSetupSMTP
+
+        try:
+            with self.assertRaises(RuntimeError) as raised:
+                royalmail.RoyalMail('smtp.example.com', 2525, use_tls=True).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual('smtp tls failed', str(raised.exception))
+        self.assertEqual(['ehlo', 'starttls', 'quit', 'close'], FailingSetupSMTP.instances[0].calls)
+
+    def test_login_failure_still_quits_connection(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        FailingSetupSMTP.instances = []
+        FailingSetupSMTP.fail_stage = 'login'
+        FailingSetupSMTP.fail_quit = False
+        royalmail.smtplib.SMTP = FailingSetupSMTP
+
+        try:
+            with self.assertRaises(RuntimeError) as raised:
+                royalmail.RoyalMail(
+                    'smtp.example.com',
+                    2525,
+                    usr='smtp-user',
+                    pwd='smtp-password',
+                ).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual('smtp login failed', str(raised.exception))
+        self.assertEqual(
+            [('login', 'smtp-user', 'smtp-password'), 'quit'],
+            FailingSetupSMTP.instances[0].calls,
+        )
 
     def test_batch_send_propagates_message_typeerror_without_retrying_list(self):
         message = royalmail.Message(
@@ -698,6 +871,67 @@ class RoyalMailTests(unittest.TestCase):
             [message.message_id for message in messages],
             callbacks,
         )
+        self.assertEqual(0, manager.queue.unfinished_tasks)
+
+    def test_manager_abort_wakes_blocked_worker_and_balances_sentinel(self):
+        manager = royalmail.Manager(RoyalMail=SuccessfulSender())
+        manager.start()
+        time.sleep(0.05)
+
+        manager.abort = True
+        manager.join(1.0)
+
+        try:
+            self.assertFalse(manager.is_alive())
+            self.assertEqual(0, manager.queue.unfinished_tasks)
+        finally:
+            if manager.is_alive():
+                manager.queue.put(None)
+                manager.join(1.0)
+
+    def test_manager_stop_is_idempotent_and_rejects_new_work(self):
+        manager = royalmail.Manager(RoyalMail=SuccessfulSender())
+        manager.start()
+        manager.abort = True
+        manager.abort = True
+        manager.join(1.0)
+
+        with self.assertRaises(RuntimeError):
+            manager.send(royalmail.Message())
+
+        self.assertEqual(0, manager.queue.unfinished_tasks)
+
+    def test_manager_reports_batch_iterator_failure_after_finishing_queue(self):
+        first = royalmail.Message(
+            To='first@example.com',
+            From='from@example.com',
+            Subject='First',
+            Body='Body',
+        )
+        second = royalmail.Message(
+            To='second@example.com',
+            From='from@example.com',
+            Subject='Second',
+            Body='Body',
+        )
+
+        def broken_batch():
+            yield first
+            raise RuntimeError('batch iteration failed')
+
+        sender = SuccessfulSender()
+        manager = royalmail.Manager(RoyalMail=sender)
+        manager.send(broken_batch())
+        manager.send(second)
+        manager.send(None)
+        manager.start()
+
+        with self.assertRaises(RuntimeError) as raised:
+            manager.join(1.0)
+
+        self.assertEqual('batch iteration failed', str(raised.exception))
+        self.assertFalse(manager.is_alive())
+        self.assertEqual([first, second], sender.messages)
         self.assertEqual(0, manager.queue.unfinished_tasks)
 
 

@@ -134,14 +134,20 @@ class RoyalMail(object):
         except BaseException as error:
             delivery_error = error
 
+        cleanup_error = None
         try:
             server.quit()
-        except BaseException:
-            if delivery_error is None:
-                raise
+        except BaseException as error:
+            cleanup_error = error
+            try:
+                server.close()
+            except BaseException:
+                pass
 
         if delivery_error is not None:
             raise delivery_error
+        if cleanup_error is not None:
+            raise cleanup_error
 
     def _send(self, server, msg):
         """
@@ -172,7 +178,9 @@ class RoyalMail(object):
                 msg.BCC = bcc
 
         you = to + cc + bcc
-        server.sendmail(me, you, msg.as_string())
+        refused = server.sendmail(me, you, msg.as_string())
+        if refused:
+            raise smtplib.SMTPRecipientsRefused(refused)
 
 class Message(object):
     """
@@ -198,20 +206,7 @@ class Message(object):
         self.attachments = []
         if attachments:
             for attachment in attachments:
-                if isinstance(attachment, string_types):
-                    self.attachments.append((attachment, None, None))
-                else:
-                    try:
-                        filename, cid, mimetype = attachment
-                    except (TypeError, ValueError):
-                        try:
-                            filename, cid = attachment
-                        except (TypeError, ValueError):
-                            self.attachments.append((attachment, None, None))
-                        else:
-                            self.attachments.append((filename, cid, None))
-                    else:
-                        self.attachments.append((filename, cid, mimetype))
+                self.attachments.append(self._attachment_details(attachment))
         self.To = To
         self.CC = CC
         self.BCC = BCC
@@ -228,6 +223,20 @@ class Message(object):
 
     def make_key(self):
         return str(uuid.uuid4())
+
+    def _attachment_details(self, attachment):
+        if isinstance(attachment, string_types):
+            return (attachment, None, None)
+        try:
+            values = iter(attachment)
+        except TypeError:
+            return (attachment, None, None)
+        values = tuple(values)
+        if len(values) == 2:
+            return (values[0], values[1], None)
+        if len(values) == 3:
+            return values
+        raise ValueError('Attachment descriptors must contain two or three values')
 
     def as_string(self):
         """Get the email as a string to send in the RoyalMail"""
@@ -418,10 +427,13 @@ class Manager(threading.Thread):
 
         self.queue = Queue.Queue()
         self.RoyalMail = RoyalMail
-        self.abort = False
+        self._abort = False
+        self._stop_enqueued = False
         self.callback = callback
         self._results = {}
         self._result_lock = threading.RLock()
+        self._state_lock = threading.RLock()
+        self._worker_error = None
 
         if self.RoyalMail is None:
             sender_cls = globals()['RoyalMail']
@@ -440,46 +452,100 @@ class Manager(threading.Thread):
         else:
             return None
 
+    @property
+    def abort(self):
+        with self._state_lock:
+            return self._abort
+
+    @abort.setter
+    def abort(self, value):
+        if value:
+            self._request_stop()
+        else:
+            with self._state_lock:
+                if not self._stop_enqueued:
+                    self._abort = False
+
+    def _request_stop(self):
+        with self._state_lock:
+            if self._stop_enqueued:
+                return
+            self._abort = True
+            self._stop_enqueued = True
+            self.queue.put(None)
+
+    def _record_worker_error(self, error):
+        with self._state_lock:
+            if self._worker_error is None:
+                self._worker_error = error
+
+    def _set_result(self, message_id, result):
+        with self._result_lock:
+            self._results[message_id] = result
+
+    def _send_message(self, message):
+        message_id = message.message_id
+        self._set_result(message_id, (False, -1, ''))
+        try:
+            self.RoyalMail.send(message)
+            self._set_result(message_id, (True, 0, ''))
+        except Exception as error:
+            if len(error.args) >= 2:
+                err_code, err_message = error.args[0], error.args[1]
+            elif len(error.args) == 1:
+                err_code, err_message = -1, error.args[0]
+            else:
+                err_code, err_message = -1, error.__class__.__name__
+            self._set_result(message_id, (False, err_code, err_message))
+
+        if self.callback:
+            try:
+                self.callback(message_id)
+            except:
+                pass
+
     def run(self):
 
-        while self.abort is False:
+        while True:
             msg = self.queue.get(block=True)
             try:
                 if msg is None:
+                    with self._state_lock:
+                        self._abort = True
+                        self._stop_enqueued = True
                     break
 
-                if isinstance(msg, Message):
-                    messages = (msg,)
-                else:
-                    try:
-                        messages = iter(msg)
-                    except TypeError:
+                try:
+                    if isinstance(msg, Message):
                         messages = (msg,)
-
-                for m in messages:
-                    try:
-                        self.results[m.message_id] = (False, -1, '')
-                        self.RoyalMail.send(m)
-                        self.results[m.message_id] = (True, 0, '')
-
-                    except Exception as e:
-                        if len(e.args) >= 2:
-                            err_code, err_message = e.args[0], e.args[1]
-                        elif len(e.args) == 1:
-                            err_code, err_message = -1, e.args[0]
-                        else:
-                            err_code, err_message = -1, e.__class__.__name__
-
-                        self.results[m.message_id] = (False, err_code, err_message)
-
-                    if self.callback:
+                    else:
                         try:
-                            self.callback(m.message_id)
-                        except:
-                            pass
+                            messages = iter(msg)
+                        except TypeError:
+                            messages = (msg,)
+
+                    for message in messages:
+                        self._send_message(message)
+                except Exception as error:
+                    self._record_worker_error(error)
 
             finally:
                 self.queue.task_done()
 
     def send(self, msg):
-        self.queue.put(msg)
+        if msg is None:
+            self._request_stop()
+            return
+        with self._state_lock:
+            if self._abort:
+                raise RuntimeError('Manager has been stopped')
+            self.queue.put(msg)
+
+    def join(self, timeout=None):
+        threading.Thread.join(self, timeout)
+        if self.is_alive():
+            return
+        with self._state_lock:
+            worker_error = self._worker_error
+        if worker_error is not None:
+            raise worker_error

@@ -6,15 +6,45 @@ import os
 from manager_contract import validate
 
 
-BASELINE = '''        while self.abort is False:
+BASELINE = '''    def _request_stop(self):
+        with self._state_lock:
+            if self._stop_enqueued:
+                return
+            self._abort = True
+            self._stop_enqueued = True
+            self.queue.put(None)
+
+    def run(self):
+        while True:
             msg = self.queue.get(block=True)
             try:
                 if msg is None:
+                    self._stop_enqueued = True
                     break
 
-                process(msg)
+                try:
+                    process(msg)
+                except Exception as error:
+                    self._record_worker_error(error)
             finally:
                 self.queue.task_done()
+
+    def send(self, msg):
+        if msg is None:
+            self._request_stop()
+            return
+        with self._state_lock:
+            if self._abort:
+                raise RuntimeError('Manager has been stopped')
+            self.queue.put(msg)
+
+    def join(self, timeout=None):
+        threading.Thread.join(self, timeout)
+        if self.is_alive():
+            return
+        worker_error = self._worker_error
+        if worker_error is not None:
+            raise worker_error
 '''
 
 
@@ -68,6 +98,31 @@ mutations = {
         '            try:\n',
         '            finally:\n                self.queue.task_done()\n            try:\n',
         1,
+    ),
+    'duplicate stop sentinel': mutate(
+        'duplicate stop sentinel',
+        '            if self._stop_enqueued:\n                return\n',
+        '',
+    ),
+    'missing stop sentinel': mutate(
+        'missing stop sentinel',
+        '            self.queue.put(None)\n',
+        '',
+    ),
+    'swallowed batch iterator failure': mutate(
+        'swallowed batch iterator failure',
+        '                    self._record_worker_error(error)',
+        '                    pass',
+    ),
+    'send after stop accepted': mutate(
+        'send after stop accepted',
+        "            if self._abort:\n                raise RuntimeError('Manager has been stopped')\n",
+        '',
+    ),
+    'worker error hidden from join': mutate(
+        'worker error hidden from join',
+        '            raise worker_error',
+        '            return',
     ),
 }
 

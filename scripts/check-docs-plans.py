@@ -32,6 +32,8 @@ ROYALMAIL_SOURCE = os.path.join(ROOT, 'royalmail.py')
 ROYALMAIL_TESTS = os.path.join(ROOT, 'tests', 'test_royalmail.py')
 MANAGER_CONTRACT = os.path.join(ROOT, 'scripts', 'manager_contract.py')
 MANAGER_CONTRACT_TEST = os.path.join(ROOT, 'scripts', 'test_manager_contract.py')
+SMTP_CONTRACT = os.path.join(ROOT, 'scripts', 'smtp_contract.py')
+SMTP_CONTRACT_TEST = os.path.join(ROOT, 'scripts', 'test_smtp_contract.py')
 
 
 def rel(path):
@@ -62,7 +64,9 @@ for required_path in (
         ROYALMAIL_SOURCE,
         ROYALMAIL_TESTS,
         MANAGER_CONTRACT,
-        MANAGER_CONTRACT_TEST):
+        MANAGER_CONTRACT_TEST,
+        SMTP_CONTRACT,
+        SMTP_CONTRACT_TEST):
     if not os.path.isfile(required_path):
         failures.append('%s is missing' % rel(required_path))
 
@@ -98,6 +102,8 @@ if os.path.isfile(MAKEFILE):
         '$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"',
         '$(PYTHON2) -B "$(ROOT)/scripts/test_manager_contract.py"',
         '$(PYTHON3) -B "$(ROOT)/scripts/test_manager_contract.py"',
+        '$(PYTHON2) -B "$(ROOT)/scripts/test_smtp_contract.py"',
+        '$(PYTHON3) -B "$(ROOT)/scripts/test_smtp_contract.py"',
         '$(PYTHON2) -B -m unittest discover -s tests',
         '$(PYTHON3) -B -m unittest discover -s tests',
         'verify: check-python2 check-python3',
@@ -193,14 +199,29 @@ if os.path.isfile(ROYALMAIL_SOURCE):
             'delivery_error = None',
             'except BaseException as error:',
             'delivery_error = error',
-            'except BaseException:',
-            'if delivery_error is None:',
+            'cleanup_error = None',
+            'cleanup_error = error',
+            'server.close()',
             'if delivery_error is not None:',
-            'raise delivery_error'):
+            'raise delivery_error',
+            'if cleanup_error is not None:',
+            'raise cleanup_error'):
         if fragment not in send_source:
             failures.append('RoyalMail.send must preserve primary failures with %s' % fragment)
     if send_source.count('server.quit()') != 1:
         failures.append('RoyalMail.send must attempt SMTP cleanup exactly once')
+    if send_source.count('server.close()') != 1:
+        failures.append('RoyalMail.send must fall back to direct SMTP close exactly once')
+
+    single_send_start = source.find('    def _send(self, server, msg):')
+    single_send_end = source.find('class Message(object):', single_send_start)
+    single_send_source = source[single_send_start:single_send_end]
+    for fragment in (
+            'refused = server.sendmail(me, you, msg.as_string())',
+            'if refused:',
+            'raise smtplib.SMTPRecipientsRefused(refused)'):
+        if fragment not in single_send_source:
+            failures.append('RoyalMail._send must surface partial recipient refusal with %s' % fragment)
 
 if os.path.isfile(ROYALMAIL_TESTS):
     tests = read(ROYALMAIL_TESTS)
@@ -212,7 +233,10 @@ if os.path.isfile(ROYALMAIL_TESTS):
             "self.assertEqual('smtp send failed', str(raised.exception))",
             'test_send_propagates_quit_failure_after_successful_delivery',
             "self.assertEqual('smtp quit failed', str(raised.exception))",
-            'self.assertTrue(FailingQuitSMTP.instances[0].quit_called)'):
+            'self.assertTrue(FailingQuitSMTP.instances[0].quit_called)',
+            'self.assertTrue(FailingQuitSMTP.instances[0].close_called)',
+            'test_send_rejects_partial_recipient_refusal',
+            'SMTPRecipientsRefused'):
         if fragment not in tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 
@@ -252,7 +276,8 @@ if os.path.isfile(ROYALMAIL_SOURCE):
         '            finally:\n                self.queue.task_done()',
         '                if isinstance(msg, Message):',
         '                        messages = iter(msg)',
-        '                for m in messages:',
+        '                    for message in messages:',
+        '                        self._send_message(message)',
         '            msg.To = to',
         '                msg.CC = cc',
         '                msg.BCC = bcc',
@@ -280,6 +305,9 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'test_manager_acknowledges_shutdown_sentinel',
             'test_manager_acknowledges_message_and_shutdown_sentinel',
             'self.assertEqual(0, manager.queue.unfinished_tasks)',
+            'test_manager_abort_wakes_blocked_worker_and_balances_sentinel',
+            'test_manager_reports_batch_iterator_failure_after_finishing_queue',
+            'test_constructor_consumes_one_pass_attachment_descriptor_once',
             'test_send_preserves_iterator_recipients_in_headers_and_envelope',
             "self.assertIsNone(parsed['BCC'])",
             "self.assertEqual(['bcc@example.com'], message.BCC)"):

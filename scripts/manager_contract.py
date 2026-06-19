@@ -10,6 +10,7 @@ GET_PATTERN = re.compile(
 SENTINEL_PATTERN = re.compile(
     r'^            try:\n'
     r'                if msg is None:\n'
+    r'(?:                    [^\n]+\n)*'
     r'                    break$',
     re.MULTILINE,
 )
@@ -37,5 +38,21 @@ def validate(source):
     if gets and sentinels and acknowledgements:
         if not (gets[0].start() < sentinels[0].start() < acknowledgements[0].start()):
             failures.append('acknowledge only after protected queue processing')
+
+    required_fragments = (
+        '    def _request_stop(self):',
+        '            if self._stop_enqueued:',
+        '            self._stop_enqueued = True',
+        '            self.queue.put(None)',
+        '                    self._record_worker_error(error)',
+        '            if self._abort:',
+        "                raise RuntimeError('Manager has been stopped')",
+        '    def join(self, timeout=None):',
+        '        if self.is_alive():',
+        '            raise worker_error',
+    )
+    for fragment in required_fragments:
+        if fragment not in source:
+            failures.append('preserve manager lifecycle contract %s' % fragment.strip())
 
     return failures
