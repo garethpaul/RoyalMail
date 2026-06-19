@@ -25,6 +25,8 @@ MANAGER_ITERABLE_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-15-manager-iterable-message-batches.md')
 SMTP_PRIMARY_ERROR_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-17-smtp-primary-error-preservation.md')
+DEEP_REVIEW_PLAN = os.path.join(
+    DOCS_PLANS, '2026-06-19-royalmail-deep-review.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -59,6 +61,7 @@ for required_path in (
         RECIPIENT_ITERATOR_PLAN,
         MANAGER_ITERABLE_PLAN,
         SMTP_PRIMARY_ERROR_PLAN,
+        DEEP_REVIEW_PLAN,
         CI_WORKFLOW,
         README,
         ROYALMAIL_SOURCE,
@@ -179,6 +182,23 @@ if os.path.isfile(SMTP_PRIMARY_ERROR_PLAN):
                 rel(SMTP_PRIMARY_ERROR_PLAN), evidence))
     if os.path.isfile(README) and rel(SMTP_PRIMARY_ERROR_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(SMTP_PRIMARY_ERROR_PLAN))
+
+if os.path.isfile(DEEP_REVIEW_PLAN):
+    deep_review_plan = read(DEEP_REVIEW_PLAN)
+    for evidence in (
+            'Status: Completed',
+            '35 behavior tests',
+            '12 manager mutations',
+            '8 SMTP mutations',
+            'Python 2.7.18 and Python 3.12.8',
+            'No live SMTP',
+            '`make check-python2`',
+            '`make check-python3`'):
+        if evidence not in deep_review_plan:
+            failures.append('%s must record verification evidence %s' % (
+                rel(DEEP_REVIEW_PLAN), evidence))
+    if os.path.isfile(README) and rel(DEEP_REVIEW_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(DEEP_REVIEW_PLAN))
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     source = read(ROYALMAIL_SOURCE)

@@ -53,10 +53,16 @@ non-ASCII bytes cannot become attachment header syntax.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
 if the relay does not require login credentials.
 SMTP cleanup should always be attempted, but a primary SMTP failure must remain
-visible if the server also fails while closing the connection.
+visible if the server also fails while closing the connection. A failed SMTP
+QUIT exchange should fall back to direct socket close. Partial recipient
+refusals must remain visible because some recipients may accept a message while
+others reject it; callers should inspect the refusal mapping rather than blindly
+retrying every recipient.
 Queued Manager batches may be one-pass iterables. They should be consumed once
 without length probing so delivery, callbacks, result records, and queue
-acknowledgements remain aligned.
+acknowledgements remain aligned. Stop signaling should wake blocked workers,
+remain idempotent, reject later submissions, and surface iterator-level worker
+failures without stranding queued tasks.
 
 ## Dependency and Supply Chain Security
 

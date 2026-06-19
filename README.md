@@ -66,9 +66,13 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   envelope-only. Manager queues also accept one-pass iterable message batches
   without probing their length or consuming them twice. SMTP cleanup still runs
   after failures, while a primary SMTP failure remains visible if shutdown also
-  fails.
+  fails. Partial recipient refusals are surfaced, failed SMTP `quit()` calls
+  fall back to direct socket close, and stopped Manager workers reject new work
+  while reporting iterator-level failures from `join()`.
 - `make check` runs a static manager contract on both runtimes and rejects
-  mutations that remove, duplicate, relocate, or bypass queue acknowledgement.
+  mutations that remove, duplicate, relocate, or bypass queue acknowledgement,
+  stop signaling, or worker-error propagation. It also rejects SMTP mutations
+  that hide refusal results, mask primary errors, or remove cleanup fallback.
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.
@@ -137,6 +141,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   Manager batch delivery and balanced queue completion.
 - See `docs/plans/2026-06-17-smtp-primary-error-preservation.md` for primary
   SMTP failure preservation across a competing cleanup failure.
+- See `docs/plans/2026-06-19-royalmail-deep-review.md` for partial-refusal,
+  cleanup-fallback, attachment-iterator, and Manager lifecycle remediation.
 
 ## Contributing
 

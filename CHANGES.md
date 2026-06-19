@@ -1,5 +1,17 @@
 # Changes
 
+## 2026-06-19
+
+- Surfaced partial SMTP recipient refusals and added direct socket cleanup when
+  SMTP `quit()` fails without masking delivery, TLS, or authentication errors.
+- Preserved two-field one-pass attachment descriptors and their internal
+  `TypeError` failures.
+- Made Manager stop signaling idempotent, woke blocked workers, rejected work
+  after stop, drained later queue items after batch iterator failures, and
+  surfaced worker failures from `join()`.
+- Added 35 cross-runtime behavior tests plus 12 manager, 8 SMTP, and 19 workflow
+  hostile mutations.
+
 ## 2026-06-17
 
 - Preserved the primary SMTP failure when delivery and connection cleanup both

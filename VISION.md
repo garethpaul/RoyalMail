@@ -24,6 +24,9 @@ Priority:
 - Start TLS whenever callers request `use_tls=True`
 - Keep SMTP connections closed on send or login failures
 - Preserve the primary SMTP failure when connection cleanup also fails
+- Surface partial recipient refusals instead of reporting incomplete delivery
+  as success
+- Fall back to direct SMTP socket close when the QUIT exchange fails
 - Reject newline characters in message headers and SMTP envelope addresses
 - Reject newline characters in attachment Content-ID headers
 - Restrict attachment identifiers to ASCII Content-ID tokens before file reads
@@ -33,6 +36,8 @@ Priority:
   shutdown sentinels and failed sends
 - Accept one-pass iterable Manager batches without length probing or repeated
   consumption
+- Wake blocked Manager workers with one idempotent stop sentinel, reject work
+  after stop, and surface iterator-level worker failures from `join()`
 - Keep completed maintenance plans under `docs/plans`
 - Keep verification runs from leaving Python bytecode in the checkout
 - Keep the shared Python 2 and Python 3 syntax, unit-test, and documentation
