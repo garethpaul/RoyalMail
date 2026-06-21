@@ -100,6 +100,7 @@ if os.path.isfile(MAKEFILE):
         'ifneq ($(origin MAKEFILE_LIST),file)',
         '$(error MAKEFILE_LIST must not be overridden)',
         'override ROOT := $(shell path=',
+        '/bin/sed',
         '[ -f "$$path" ] || exit 1',
         'export ROOT',
         '$(error repository Makefile path could not be resolved)',
