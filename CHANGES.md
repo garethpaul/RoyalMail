@@ -5,6 +5,8 @@
 - Made every Make quality gate safe for spaced and shell-sensitive checkout
   paths and rejected caller-controlled root, Python, shell, preload, and
   Makefile-list authority without changing RoyalMail behavior.
+- Removed platform-specific root helpers and rejected extra Makefiles in either
+  `-f` ordering before repository checks run.
 
 ## 2026-06-19
 

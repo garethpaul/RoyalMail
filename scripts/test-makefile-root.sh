@@ -186,4 +186,17 @@ if [ -e "$COMMAND_LOG" ]; then
   exit 1
 fi
 
-printf '%s\n' "Makefile root tests passed: 165 executed target/authority cases, 2 MAKEFILE_LIST rejections, 1 MAKEFILES rejection, and 1 multi-Makefile rejection"
+LATER_MAKEFILE="$TEMP_ROOT/later.mk"
+printf '%s\n' '# Explicit caller-controlled Makefile.' >"$LATER_MAKEFILE"
+rm -f "$COMMAND_LOG"
+if (cd "$CONTROL_DIR" && PATH="$CHECKOUT/bin:$PATH" ROYALMAIL_COMMAND_LOG="$COMMAND_LOG" /usr/bin/make --no-print-directory --file "$MAKEFILE" --file "$LATER_MAKEFILE" check) >"$TEMP_ROOT/later.out" 2>&1; then
+  printf '%s\n' "later multiple -f Makefiles unexpectedly passed" >&2
+  exit 1
+fi
+grep -Fq "multiple -f Makefiles are not supported" "$TEMP_ROOT/later.out"
+if [ -e "$COMMAND_LOG" ]; then
+  printf '%s\n' "later multiple -f Makefiles reached a quality command" >&2
+  exit 1
+fi
+
+printf '%s\n' "Makefile root tests passed: 165 executed target/authority cases, 2 MAKEFILE_LIST rejections, 1 MAKEFILES rejection, and 2 multi-Makefile rejections"

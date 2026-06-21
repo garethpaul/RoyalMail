@@ -99,22 +99,22 @@ if os.path.isfile(MAKEFILE):
         '$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)',
         'ifneq ($(origin MAKEFILE_LIST),file)',
         '$(error MAKEFILE_LIST must not be overridden)',
-        'override ROOT := $(shell path=',
-        '/bin/sed',
-        '[ -f "$$path" ] || exit 1',
-        'export ROOT',
-        '$(error repository Makefile path could not be resolved)',
-        '$(PYTHON2) -B "$$ROOT/scripts/check-docs-plans.py"',
-        '$(PYTHON3) -B "$$ROOT/scripts/check-docs-plans.py"',
-        '$(PYTHON2) -B "$$ROOT/scripts/test_workflow_contract.py"',
-        '$(PYTHON3) -B "$$ROOT/scripts/test_workflow_contract.py"',
-        '$(PYTHON2) -B "$$ROOT/scripts/test_manager_contract.py"',
-        '$(PYTHON3) -B "$$ROOT/scripts/test_manager_contract.py"',
-        '$(PYTHON2) -B "$$ROOT/scripts/test_smtp_contract.py"',
-        '$(PYTHON3) -B "$$ROOT/scripts/test_smtp_contract.py"',
+        'override REPOSITORY_MAKEFILE := $(value MAKEFILE_LIST)',
+        'override CURRENT_MAKEFILE_LIST = $(value MAKEFILE_LIST)',
+        'multiple -f Makefiles are not supported',
+        'makefile=$${REPOSITORY_MAKEFILE# }',
+        'override define RUN_IN_REPO',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/check-docs-plans.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/check-docs-plans.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_workflow_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_workflow_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_manager_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_manager_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_smtp_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_smtp_contract.py',
         '$(PYTHON2) -B -m unittest discover -s tests',
         '$(PYTHON3) -B -m unittest discover -s tests',
-        '"$$ROOT/scripts/test-makefile-root.sh"',
+        '$(RUN_IN_REPO) /bin/sh scripts/test-makefile-root.sh',
         'verify: root-test check-python2 check-python3',
     )
     for phrase in required_makefile_phrases:
@@ -131,7 +131,7 @@ if os.path.isfile(MAKEFILE):
                 '165 executed target/authority cases',
                 '2 MAKEFILE_LIST rejections',
                 '1 MAKEFILES rejection',
-                '1 multi-Makefile rejection'):
+                '2 multi-Makefile rejections'):
             if phrase not in root_test:
                 failures.append('Makefile root test must contain %s' % phrase)
     else:
@@ -155,7 +155,7 @@ if os.path.isfile(SAFE_MAKE_AUTHORITY_PLAN):
             '165 executed target, root, shell, and dual-Python authority cases',
             'Both `MAKEFILE_LIST` override channels',
             '`MAKEFILES` preload',
-            'ambiguous multiple-Makefile invocation failed closed'):
+            'both `-f` orderings failed closed'):
         if evidence not in safe_make_authority_plan:
             failures.append('%s must record verification evidence %s' % (
                 rel(SAFE_MAKE_AUTHORITY_PLAN), evidence))

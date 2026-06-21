@@ -17,12 +17,16 @@ Caller-controlled `MAKEFILE_LIST`, `MAKEFILES`, `ROOT`, `PYTHON2`, `PYTHON3`,
 
 ## Work Completed
 
-- Canonicalize the checked-in Makefile through quoted POSIX tools without
-  splitting spaces or interpreting shell-sensitive checkout names.
-- Freeze both Python commands and shell authority and export the canonical root as data.
+- Pass the Makefile path to recipes as environment data and resolve the root
+  with POSIX shell built-ins without splitting or interpreting checkout names.
+- Freeze both Python command overrides and shell authority.
 - Reject both `MAKEFILE_LIST` replacement channels, `MAKEFILES` preloads, and
-  ambiguous multiple-`-f` invocations before a quality command runs.
+  ambiguous multiple-`-f` invocations in either ordering before a quality command runs.
 - Add an executable dependency-free root suite to `make verify` and `make check`.
+
+The selected Python executables still resolve through the provisioned `PATH` so
+the reviewed Python 2 container and setup-python runtime remain usable. That
+toolchain `PATH` is trusted; root resolution does not execute PATH-selected helpers.
 
 ## Verification Completed
 
@@ -30,7 +34,7 @@ Caller-controlled `MAKEFILE_LIST`, `MAKEFILES`, `ROOT`, `PYTHON2`, `PYTHON3`,
   and Python 3.12.8 passed their exact runtime gates.
 - All 165 executed target, root, shell, and dual-Python authority cases passed
   from a path containing spaces, quotes, brackets, an apostrophe, and backticks.
-- Both `MAKEFILE_LIST` override channels, a `MAKEFILES` preload, and an
-  ambiguous multiple-Makefile invocation failed closed.
+- Both `MAKEFILE_LIST` override channels, a `MAKEFILES` preload, and ambiguous
+  multiple-Makefile invocations in both `-f` orderings failed closed.
 - Documentation, workflow, manager, SMTP, unit, Ruby/shell syntax,
   `git diff --check`, bytecode, and strict Git object validation passed.
