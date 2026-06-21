@@ -51,6 +51,8 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Testing and Verification
 
+- Make verification derives one canonical checked-in root, freezes both Python
+  commands and shell authority, and rejects preloaded or ambiguous Makefiles.
 - `make check` runs the same syntax checks and unit tests on Python 2 and Python
   3 for plain text, HTML,
   attachment, envelope, header-injection rejection, SMTP cleanup, and manager
@@ -143,6 +145,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   SMTP failure preservation across a competing cleanup failure.
 - See `docs/plans/2026-06-19-royalmail-deep-review.md` for partial-refusal,
   cleanup-fallback, attachment-iterator, and Manager lifecycle remediation.
+- See `docs/plans/2026-06-21-safe-make-authority.md` for spaced-checkout root
+  resolution and fail-closed dual-runtime Make authority.
 
 ## Contributing
 
