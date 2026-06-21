@@ -18,6 +18,7 @@ HOSTED_LEGACY_PLAN = os.path.join(DOCS_PLANS, '2026-06-10-hosted-legacy-validati
 MIMETYPE_TOKEN_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-attachment-mimetype-token-guard.md')
 PYTHON3_PLAN = os.path.join(DOCS_PLANS, '2026-06-12-python3-compatibility.md')
 MAKE_ROOT_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-make-root-override-protection.md')
+SAFE_MAKE_AUTHORITY_PLAN = os.path.join(DOCS_PLANS, '2026-06-21-safe-make-authority.md')
 SEND_TYPEERROR_PLAN = os.path.join(DOCS_PLANS, '2026-06-14-send-typeerror-propagation.md')
 RECIPIENT_ITERATOR_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-14-recipient-iterator-header-preservation.md')
@@ -57,6 +58,7 @@ for required_path in (
         MIMETYPE_TOKEN_PLAN,
         PYTHON3_PLAN,
         MAKE_ROOT_PLAN,
+        SAFE_MAKE_AUTHORITY_PLAN,
         SEND_TYPEERROR_PLAN,
         RECIPIENT_ITERATOR_PLAN,
         MANAGER_ITERABLE_PLAN,
@@ -88,28 +90,32 @@ if os.path.isfile(CI_WORKFLOW):
 
 if os.path.isfile(MAKEFILE):
     makefile = read(MAKEFILE)
-    root_declaration = 'override ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))'
-    root_assignments = [
-        line for line in makefile.splitlines()
-        if re.match(r'^(?:override\s+)?ROOT\s*[:?+]?=', line)
-    ]
-    if not makefile.startswith(root_declaration + '\n') or root_assignments != [root_declaration]:
-        failures.append('Makefile must define exactly one protected repository-derived ROOT declaration first')
     required_makefile_phrases = (
-        root_declaration,
-        'PYTHON2 ?= python2',
-        'PYTHON3 ?= python3',
-        '$(PYTHON2) -B "$(ROOT)/scripts/check-docs-plans.py"',
-        '$(PYTHON3) -B "$(ROOT)/scripts/check-docs-plans.py"',
-        '$(PYTHON2) -B "$(ROOT)/scripts/test_workflow_contract.py"',
-        '$(PYTHON3) -B "$(ROOT)/scripts/test_workflow_contract.py"',
-        '$(PYTHON2) -B "$(ROOT)/scripts/test_manager_contract.py"',
-        '$(PYTHON3) -B "$(ROOT)/scripts/test_manager_contract.py"',
-        '$(PYTHON2) -B "$(ROOT)/scripts/test_smtp_contract.py"',
-        '$(PYTHON3) -B "$(ROOT)/scripts/test_smtp_contract.py"',
+        'override SHELL := /bin/sh',
+        'override .SHELLFLAGS := -c',
+        'override PYTHON2 := python2',
+        'override PYTHON3 := python3',
+        'ifneq ($(strip $(MAKEFILES)),)',
+        '$(error MAKEFILES must be empty; repository verification requires this Makefile to be loaded alone)',
+        'ifneq ($(origin MAKEFILE_LIST),file)',
+        '$(error MAKEFILE_LIST must not be overridden)',
+        'override REPOSITORY_MAKEFILE := $(value MAKEFILE_LIST)',
+        'override CURRENT_MAKEFILE_LIST = $(value MAKEFILE_LIST)',
+        'multiple -f Makefiles are not supported',
+        'makefile=$${REPOSITORY_MAKEFILE# }',
+        'override define RUN_IN_REPO',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/check-docs-plans.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/check-docs-plans.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_workflow_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_workflow_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_manager_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_manager_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_smtp_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_smtp_contract.py',
         '$(PYTHON2) -B -m unittest discover -s tests',
         '$(PYTHON3) -B -m unittest discover -s tests',
-        'verify: check-python2 check-python3',
+        '$(RUN_IN_REPO) /bin/sh scripts/test-makefile-root.sh',
+        'verify: root-test check-python2 check-python3',
     )
     for phrase in required_makefile_phrases:
         if phrase not in makefile:
@@ -117,6 +123,19 @@ if os.path.isfile(MAKEFILE):
 
     if 'command -v "$(PYTHON' in makefile or 'Skipping legacy Python 2' in makefile or 'Skipping Python 3' in makefile:
         failures.append('Makefile must require both runtime gates instead of skipping them')
+
+    root_test_path = os.path.join(ROOT, 'scripts', 'test-makefile-root.sh')
+    if os.path.isfile(root_test_path):
+        root_test = read(root_test_path)
+        for phrase in (
+                '165 executed target/authority cases',
+                '2 MAKEFILE_LIST rejections',
+                '1 MAKEFILES rejection',
+                '2 multi-Makefile rejections'):
+            if phrase not in root_test:
+                failures.append('Makefile root test must contain %s' % phrase)
+    else:
+        failures.append('scripts/test-makefile-root.sh is missing')
 
 if os.path.isfile(MAKE_ROOT_PLAN):
     make_root_plan = read(MAKE_ROOT_PLAN)
@@ -129,6 +148,19 @@ if os.path.isfile(MAKE_ROOT_PLAN):
             failures.append('%s must record verification evidence %s' % (rel(MAKE_ROOT_PLAN), evidence))
     if os.path.isfile(README) and rel(MAKE_ROOT_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(MAKE_ROOT_PLAN))
+
+if os.path.isfile(SAFE_MAKE_AUTHORITY_PLAN):
+    safe_make_authority_plan = read(SAFE_MAKE_AUTHORITY_PLAN)
+    for evidence in (
+            '165 executed target, root, shell, and dual-Python authority cases',
+            'Both `MAKEFILE_LIST` override channels',
+            '`MAKEFILES` preload',
+            'both `-f` orderings failed closed'):
+        if evidence not in safe_make_authority_plan:
+            failures.append('%s must record verification evidence %s' % (
+                rel(SAFE_MAKE_AUTHORITY_PLAN), evidence))
+    if os.path.isfile(README) and rel(SAFE_MAKE_AUTHORITY_PLAN) not in read(README):
+        failures.append('README.md must reference %s' % rel(SAFE_MAKE_AUTHORITY_PLAN))
 
 if os.path.isfile(SEND_TYPEERROR_PLAN):
     send_typeerror_plan = read(SEND_TYPEERROR_PLAN)
