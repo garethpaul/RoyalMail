@@ -11,12 +11,13 @@
 - Tests: 38 behavior tests pass on pinned Python 2.7.18 and Python 3.12.8;
   19 workflow, 13 Manager, and 14 SMTP hostile mutations are rejected on both
   runtimes; root and absolute external `make check` pass with 165 Make
-  authority cases.
+  authority cases. Hosted Python 2.7/3.12 and CodeQL for Actions and Python
+  pass on implementation commit `74b3185`.
 - Findings: no open pull requests or issues overlap this change.
 - Blockers: Codex review authentication may be unavailable and will be skipped
   after one HTTP 401 attempt.
-- Next action: push the implementation, record exact hosted Python and CodeQL
-  evidence, then merge only the verified head.
+- Next action: push the completed evidence contract and merge only its exact
+  hosted-green head.
 
 ## 2026-06-26
 
