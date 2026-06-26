@@ -10,6 +10,11 @@ def validate(source):
     single_send_source = source[send_end:single_send_end]
 
     send_fragments = (
+        'if self.tls_context is None:',
+        'server.starttls()',
+        'elif sys.version_info[0] < 3:',
+        "raise RuntimeError('TLS contexts require Python 3 smtplib support')",
+        'server.starttls(context=self.tls_context)',
         'delivery_error = None',
         'delivery_error = error',
         'cleanup_error = None',
@@ -24,6 +29,11 @@ def validate(source):
     for fragment in send_fragments:
         if fragment not in send_source:
             failures.append('preserve SMTP send contract %s' % fragment)
+
+    if send_source.count('server.starttls()') != 1:
+        failures.append('preserve one legacy STARTTLS call')
+    if send_source.count('server.starttls(context=self.tls_context)') != 1:
+        failures.append('forward one explicit TLS context')
 
     if send_source.count('server.quit()') != 1:
         failures.append('attempt SMTP quit exactly once')

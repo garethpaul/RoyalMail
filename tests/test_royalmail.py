@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 import time
 import unittest
@@ -85,8 +86,11 @@ class FailingSetupSMTP(object):
     def ehlo(self):
         self.calls.append('ehlo')
 
-    def starttls(self):
-        self.calls.append('starttls')
+    def starttls(self, **kwargs):
+        if kwargs:
+            self.calls.append(('starttls', kwargs))
+        else:
+            self.calls.append('starttls')
         if self.fail_stage == 'starttls':
             raise RuntimeError('smtp tls failed')
 
@@ -119,8 +123,11 @@ class TrackingSMTP(object):
     def ehlo(self):
         self.calls.append('ehlo')
 
-    def starttls(self):
-        self.calls.append('starttls')
+    def starttls(self, **kwargs):
+        if kwargs:
+            self.calls.append(('starttls', kwargs))
+        else:
+            self.calls.append('starttls')
 
     def login(self, usr, pwd):
         self.calls.append(('login', usr, pwd))
@@ -370,12 +377,14 @@ class RoyalMailTests(unittest.TestCase):
         self.assertTrue(tracking_file.closed)
 
     def test_manager_creates_default_sender_from_kwargs(self):
+        tls_context = object()
         manager = royalmail.Manager(
             host='smtp.example.com',
             port=2525,
             use_tls=True,
             usr='smtp-user',
             pwd='smtp-password',
+            tls_context=tls_context,
         )
 
         self.assertIsInstance(manager.RoyalMail, royalmail.RoyalMail)
@@ -384,6 +393,7 @@ class RoyalMailTests(unittest.TestCase):
         self.assertTrue(manager.RoyalMail.use_tls)
         self.assertEqual('smtp-user', manager.RoyalMail._usr)
         self.assertEqual('smtp-password', manager.RoyalMail._pwd)
+        self.assertIs(tls_context, manager.RoyalMail.tls_context)
 
     def test_bcc_is_envelope_only(self):
         message = royalmail.Message(
@@ -786,6 +796,66 @@ class RoyalMailTests(unittest.TestCase):
             [],
             [call for call in server.calls if isinstance(call, tuple) and call[0] == 'login'],
         )
+
+    @unittest.skipIf(sys.version_info[0] < 3, 'SSLContext STARTTLS requires Python 3')
+    def test_use_tls_forwards_caller_context_on_python3(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        tls_context = object()
+        original_smtp = royalmail.smtplib.SMTP
+        TrackingSMTP.instances = []
+        royalmail.smtplib.SMTP = TrackingSMTP
+
+        try:
+            royalmail.RoyalMail(
+                'smtp.example.com',
+                2525,
+                use_tls=True,
+                tls_context=tls_context,
+            ).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        server = TrackingSMTP.instances[0]
+        self.assertEqual('ehlo', server.calls[0])
+        self.assertEqual('starttls', server.calls[1][0])
+        self.assertIs(tls_context, server.calls[1][1]['context'])
+        self.assertEqual('ehlo', server.calls[2])
+        self.assertEqual('sendmail', server.calls[3][0])
+        self.assertEqual('quit', server.calls[-1])
+
+    @unittest.skipUnless(sys.version_info[0] < 3, 'legacy rejection only applies to Python 2')
+    def test_use_tls_rejects_context_on_python2_and_quits(self):
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+        original_smtp = royalmail.smtplib.SMTP
+        TrackingSMTP.instances = []
+        royalmail.smtplib.SMTP = TrackingSMTP
+
+        try:
+            with self.assertRaises(RuntimeError) as raised:
+                royalmail.RoyalMail(
+                    'smtp.example.com',
+                    2525,
+                    use_tls=True,
+                    tls_context=object(),
+                ).send(message)
+        finally:
+            royalmail.smtplib.SMTP = original_smtp
+
+        self.assertEqual(
+            'TLS contexts require Python 3 smtplib support',
+            str(raised.exception),
+        )
+        self.assertEqual(['ehlo', 'quit'], TrackingSMTP.instances[0].calls)
 
     def test_manager_records_no_arg_send_exception(self):
         message = royalmail.Message(
