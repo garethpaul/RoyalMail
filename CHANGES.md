@@ -1,5 +1,14 @@
 # Changes
 
+## 2026-06-26
+
+- Added optional caller-supplied TLS context forwarding for authenticated
+  Python 3 STARTTLS without changing the legacy no-context call path.
+- Rejected TLS context requests clearly on Python 2, whose `smtplib` cannot
+  consume an `SSLContext`, while preserving SMTP cleanup and Manager forwarding.
+- Documented that default STARTTLS encrypts the connection but does not create
+  a RoyalMail-controlled certificate-verification policy.
+
 ## 2026-06-21
 
 - Made every Make quality gate safe for spaced and shell-sensitive checkout

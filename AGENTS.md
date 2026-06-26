@@ -48,6 +48,8 @@
 - See `docs/plans/2026-06-08-royalmail-baseline.md` for the canonical Python 2 message-composition verification baseline.
 - See `docs/plans/2026-06-08-smtp-cleanup-on-failure.md` for the SMTP cleanup regression baseline.
 - See `docs/plans/2026-06-09-header-newline-guard.md` for the message header and envelope newline guard.
+- See `docs/plans/2026-06-26-verified-tls-context.md` for explicit TLS context
+  forwarding and the Python 2 verification boundary.
 - Hosted checks must run the complete Python 2 gate in the reviewed
   digest-pinned container with credential-free checkout and read-only
   permissions; missing Python 2 must not become a successful skip.

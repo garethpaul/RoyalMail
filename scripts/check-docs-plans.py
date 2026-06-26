@@ -28,6 +28,8 @@ SMTP_PRIMARY_ERROR_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-17-smtp-primary-error-preservation.md')
 DEEP_REVIEW_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-19-royalmail-deep-review.md')
+VERIFIED_TLS_PLAN = os.path.join(
+    DOCS_PLANS, '2026-06-26-verified-tls-context.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -64,6 +66,7 @@ for required_path in (
         MANAGER_ITERABLE_PLAN,
         SMTP_PRIMARY_ERROR_PLAN,
         DEEP_REVIEW_PLAN,
+        VERIFIED_TLS_PLAN,
         CI_WORKFLOW,
         README,
         ROYALMAIL_SOURCE,
@@ -248,6 +251,11 @@ if os.path.isfile(ROYALMAIL_SOURCE):
     if 'except TypeError' in send_source:
         failures.append('RoyalMail.send must not catch per-message TypeError')
     for fragment in (
+            'if self.tls_context is None:',
+            'server.starttls()',
+            'elif sys.version_info[0] < 3:',
+            "raise RuntimeError('TLS contexts require Python 3 smtplib support')",
+            'server.starttls(context=self.tls_context)',
             'delivery_error = None',
             'except BaseException as error:',
             'delivery_error = error',
@@ -288,7 +296,10 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'self.assertTrue(FailingQuitSMTP.instances[0].quit_called)',
             'self.assertTrue(FailingQuitSMTP.instances[0].close_called)',
             'test_send_rejects_partial_recipient_refusal',
-            'SMTPRecipientsRefused'):
+            'SMTPRecipientsRefused',
+            'test_use_tls_forwards_caller_context_on_python3',
+            'test_use_tls_rejects_context_on_python2_and_quits',
+            "self.assertIs(tls_context, manager.RoyalMail.tls_context)"):
         if fragment not in tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
 
@@ -305,10 +316,15 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document the Python 3.12 compatibility gate' % docs_file)
     if 'primary SMTP failure' not in docs:
         failures.append('%s must document primary SMTP failure preservation' % docs_file)
+    if 'TLS context' not in docs:
+        failures.append('%s must document explicit TLS context behavior' % docs_file)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     royalmail_source = read(ROYALMAIL_SOURCE)
     required_source_fragments = (
+        '                 tls_context=None):',
+        '        self.tls_context = tls_context',
+        "                tls_context=kwargs.get('tls_context', None),",
         'MIME_TOKEN_RE = re.compile(',
         "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$",
         'len(parts) != 2',

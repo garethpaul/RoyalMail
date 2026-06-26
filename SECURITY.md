@@ -51,7 +51,12 @@ characters before MIME headers are constructed. Both components are restricted
 to ASCII MIME type tokens so parameters, whitespace, delimiters, controls, and
 non-ASCII bytes cannot become attachment header syntax.
 When callers request `use_tls=True`, the SMTP connection should start TLS even
-if the relay does not require login credentials.
+if the relay does not require login credentials. That default encrypts the
+connection but does not create a RoyalMail-controlled certificate-verification
+policy. Python 3 callers can supply a trusted TLS context, which is forwarded
+unchanged to `SMTP.starttls(context=...)`; Python 2 rejects that option because
+its legacy `smtplib` cannot consume an `SSLContext` rather than silently
+downgrading the caller's verification request.
 SMTP cleanup should always be attempted, but a primary SMTP failure must remain
 visible if the server also fails while closing the connection. A failed SMTP
 QUIT exchange should fall back to direct socket close. Partial recipient

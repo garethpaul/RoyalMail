@@ -29,6 +29,7 @@ Sample code:
 
 """
 import smtplib
+import sys
 import threading
 import uuid
 import re
@@ -92,12 +93,14 @@ class RoyalMail(object):
     Use login() to log in with a username and password.
     """
 
-    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None):
+    def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None,
+                 tls_context=None):
         self.host = host
         self.port = port
         self.use_tls = use_tls
         self._usr = usr
         self._pwd = pwd
+        self.tls_context = tls_context
 
     def login(self, usr, pwd):
         self._usr = usr
@@ -118,7 +121,12 @@ class RoyalMail(object):
         try:
             if self.use_tls is True:
                 server.ehlo()
-                server.starttls()
+                if self.tls_context is None:
+                    server.starttls()
+                elif sys.version_info[0] < 3:
+                    raise RuntimeError('TLS contexts require Python 3 smtplib support')
+                else:
+                    server.starttls(context=self.tls_context)
                 server.ehlo()
 
             if self._usr and self._pwd:
@@ -443,6 +451,7 @@ class Manager(threading.Thread):
                 use_tls=kwargs.get('use_tls', False),
                 usr=kwargs.get('usr', None),
                 pwd=kwargs.get('pwd', None),
+                tls_context=kwargs.get('tls_context', None),
             )
 
     def __getattr__(self, name):

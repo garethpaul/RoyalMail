@@ -7,6 +7,13 @@ from smtp_contract import validate
 
 
 BASELINE = '''    def send(self, msg):
+        if self.tls_context is None:
+            server.starttls()
+        elif sys.version_info[0] < 3:
+            raise RuntimeError('TLS contexts require Python 3 smtplib support')
+        else:
+            server.starttls(context=self.tls_context)
+
         delivery_error = None
         try:
             deliver(msg)
@@ -62,6 +69,26 @@ if implementation_failures:
     )
 
 mutations = {
+    'legacy TLS removed': mutate(
+        'legacy TLS removed',
+        '            server.starttls()\n',
+        '',
+    ),
+    'context forwarding removed': mutate(
+        'context forwarding removed',
+        '            server.starttls(context=self.tls_context)\n',
+        '',
+    ),
+    'context silently downgraded': mutate(
+        'context silently downgraded',
+        '            server.starttls(context=self.tls_context)\n',
+        '            server.starttls()\n',
+    ),
+    'legacy runtime rejection removed': mutate(
+        'legacy runtime rejection removed',
+        "            raise RuntimeError('TLS contexts require Python 3 smtplib support')\n",
+        '',
+    ),
     'missing delivery capture': mutate(
         'missing delivery capture',
         '            delivery_error = error\n',

@@ -90,6 +90,30 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
 
+### TLS Verification
+
+`use_tls=True` preserves the legacy STARTTLS behavior and encrypts the SMTP
+connection, but RoyalMail does not create or choose a certificate-verification
+policy by default. On Python 3, callers that require authenticated TLS should
+pass an `ssl.SSLContext` configured for their trust requirements:
+
+```python
+import ssl
+
+sender = RoyalMail(
+    'smtp.example.com',
+    587,
+    use_tls=True,
+    tls_context=ssl.create_default_context(),
+)
+```
+
+The exact TLS context is forwarded to `SMTP.starttls(context=...)`. Python
+2.7's `smtplib` cannot accept an `SSLContext`; supplying `tls_context` there
+raises a clear runtime error instead of silently falling back to unverified
+legacy STARTTLS. Use Python 3 or an externally authenticated TLS tunnel when
+certificate verification is required.
+
 ## Security and Privacy Notes
 
 - Review changes touching authentication or token handling; examples from the scan include royalmail.py.
@@ -147,6 +171,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   cleanup-fallback, attachment-iterator, and Manager lifecycle remediation.
 - See `docs/plans/2026-06-21-safe-make-authority.md` for spaced-checkout root
   resolution and fail-closed dual-runtime Make authority.
+- See `docs/plans/2026-06-26-verified-tls-context.md` for explicit Python 3
+  TLS context forwarding and the Python 2 verification boundary.
 
 ## Contributing
 

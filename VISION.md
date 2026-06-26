@@ -22,6 +22,8 @@ Priority:
   before MIME construction or attachment reads
 - Keep attachment file handles closed on MIME construction failures
 - Start TLS whenever callers request `use_tls=True`
+- Forward caller-supplied TLS contexts on Python 3 and reject them explicitly
+  on Python 2, where legacy `smtplib` cannot enforce that verification policy
 - Keep SMTP connections closed on send or login failures
 - Preserve the primary SMTP failure when connection cleanup also fails
 - Surface partial recipient refusals instead of reporting incomplete delivery
@@ -49,7 +51,6 @@ Priority:
 
 Next priorities:
 
-- Document TLS expectations
 - Validate attachment paths and MIME type handling
 - Return clearer errors for SMTP failures
 
