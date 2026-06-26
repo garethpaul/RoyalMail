@@ -139,6 +139,12 @@ class TrackingSMTP(object):
         self.calls.append('quit')
 
 
+class TimeoutTrackingSMTP(TrackingSMTP):
+    def __init__(self, host, port, timeout=None):
+        TrackingSMTP.__init__(self, host, port)
+        self.timeout = timeout
+
+
 class NoArgFailingSender(object):
     def send(self, message):
         raise RuntimeError()
@@ -174,6 +180,25 @@ class TypeErrorTrackingRoyalMail(royalmail.RoyalMail):
 
 
 class RoyalMailTests(unittest.TestCase):
+    def test_send_forwards_explicit_smtp_timeout(self):
+        original_smtp = royalmail.smtplib.SMTP
+        royalmail.smtplib.SMTP = TimeoutTrackingSMTP
+        self.addCleanup(setattr, royalmail.smtplib, 'SMTP', original_smtp)
+        TimeoutTrackingSMTP.instances = []
+        TrackingSMTP.instances = []
+        message = royalmail.Message(
+            To='to@example.com',
+            From='from@example.com',
+            Subject='Subject',
+            Body='Body',
+        )
+
+        royalmail.RoyalMail(
+            'smtp.example.com', 2525, timeout=12.5
+        ).send(message)
+
+        self.assertEqual(12.5, TrackingSMTP.instances[0].timeout)
+
     def test_unicode_subject_uses_declared_charset(self):
         message = royalmail.Message(
             To='to@example.com',
@@ -385,6 +410,7 @@ class RoyalMailTests(unittest.TestCase):
             usr='smtp-user',
             pwd='smtp-password',
             tls_context=tls_context,
+            timeout=12.5,
         )
 
         self.assertIsInstance(manager.RoyalMail, royalmail.RoyalMail)
@@ -394,6 +420,7 @@ class RoyalMailTests(unittest.TestCase):
         self.assertEqual('smtp-user', manager.RoyalMail._usr)
         self.assertEqual('smtp-password', manager.RoyalMail._pwd)
         self.assertIs(tls_context, manager.RoyalMail.tls_context)
+        self.assertEqual(12.5, manager.RoyalMail.timeout)
 
     def test_bcc_is_envelope_only(self):
         message = royalmail.Message(

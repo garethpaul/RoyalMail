@@ -10,6 +10,9 @@ def validate(source):
     single_send_source = source[send_end:single_send_end]
 
     send_fragments = (
+        'if self.timeout is None:',
+        'server = smtplib.SMTP(self.host, self.port)',
+        'server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)',
         'if self.tls_context is None:',
         'server.starttls()',
         'elif sys.version_info[0] < 3:',
@@ -29,6 +32,20 @@ def validate(source):
     for fragment in send_fragments:
         if fragment not in send_source:
             failures.append('preserve SMTP send contract %s' % fragment)
+
+    if send_source.count('server = smtplib.SMTP(self.host, self.port)') != 1:
+        failures.append('preserve one legacy SMTP constructor call')
+    if send_source.count(
+            'server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)') != 1:
+        failures.append('forward one explicit SMTP timeout')
+    timeout_positions = [
+        send_source.find('if self.timeout is None:'),
+        send_source.find('server = smtplib.SMTP(self.host, self.port)'),
+        send_source.find(
+            'server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)'),
+    ]
+    if any(position < 0 for position in timeout_positions) or timeout_positions != sorted(timeout_positions):
+        failures.append('preserve opt-in SMTP timeout branch ordering')
 
     if send_source.count('server.starttls()') != 1:
         failures.append('preserve one legacy STARTTLS call')

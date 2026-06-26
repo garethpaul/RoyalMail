@@ -30,6 +30,8 @@ DEEP_REVIEW_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-19-royalmail-deep-review.md')
 VERIFIED_TLS_PLAN = os.path.join(
     DOCS_PLANS, '2026-06-26-verified-tls-context.md')
+SMTP_TIMEOUT_PLAN = os.path.join(
+    DOCS_PLANS, '2026-06-26-smtp-connect-timeout.md')
 CI_WORKFLOW = os.path.join(ROOT, '.github', 'workflows', 'check.yml')
 MAKEFILE = os.path.join(ROOT, 'Makefile')
 README = os.path.join(ROOT, 'README.md')
@@ -299,6 +301,8 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'SMTPRecipientsRefused',
             'test_use_tls_forwards_caller_context_on_python3',
             'test_use_tls_rejects_context_on_python2_and_quits',
+            'test_send_forwards_explicit_smtp_timeout',
+            'self.assertEqual(12.5, manager.RoyalMail.timeout)',
             "self.assertIs(tls_context, manager.RoyalMail.tls_context)"):
         if fragment not in tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
@@ -318,13 +322,18 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document primary SMTP failure preservation' % docs_file)
     if 'TLS context' not in docs:
         failures.append('%s must document explicit TLS context behavior' % docs_file)
+    if 'SMTP connection timeout' not in docs:
+        failures.append('%s must document optional SMTP connection timeout behavior' % docs_file)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     royalmail_source = read(ROYALMAIL_SOURCE)
     required_source_fragments = (
-        '                 tls_context=None):',
+        '                 tls_context=None, timeout=None):',
         '        self.tls_context = tls_context',
+        '        self.timeout = timeout',
+        '            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)',
         "                tls_context=kwargs.get('tls_context', None),",
+        "                timeout=kwargs.get('timeout', None),",
         'MIME_TOKEN_RE = re.compile(',
         "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$",
         'len(parts) != 2',
@@ -353,6 +362,23 @@ if os.path.isfile(ROYALMAIL_SOURCE):
     for fragment in required_source_fragments:
         if fragment not in royalmail_source:
             failures.append('royalmail.py must contain %s' % fragment)
+
+if os.path.isfile(SMTP_TIMEOUT_PLAN):
+    smtp_timeout_plan = ' '.join(read(SMTP_TIMEOUT_PLAN).split())
+    for evidence in (
+            'Status: Completed',
+            'All 38 behavior tests passed',
+            'Nineteen workflow, thirteen Manager, and fourteen SMTP hostile mutations',
+            '165 Make authority cases',
+            '74b3185a3a129e58dab400fdac281f0e677c2896',
+            '28253221316',
+            'Python 2.7 and Python 3.12',
+            '28253219268',
+            'Actions and Python',
+            'no live SMTP relay or credentials'):
+        if evidence not in smtp_timeout_plan:
+            failures.append(
+                'SMTP timeout plan must preserve completed evidence %s' % evidence)
 
     manager_run_start = royalmail_source.find('    def run(self):')
     manager_run_end = royalmail_source.find('    def send(self, msg):', manager_run_start)

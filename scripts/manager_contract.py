@@ -39,6 +39,12 @@ def validate(source):
         if not (gets[0].start() < sentinels[0].start() < acknowledgements[0].start()):
             failures.append('acknowledge only after protected queue processing')
 
+    if not re.search(
+            r"^\s+timeout=kwargs\.get\('timeout', None\),$",
+            source,
+            re.MULTILINE):
+        failures.append('forward the optional SMTP timeout through Manager')
+
     required_fragments = (
         '    def _request_stop(self):',
         '            if self._stop_enqueued:',

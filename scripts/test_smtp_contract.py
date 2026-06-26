@@ -7,6 +7,11 @@ from smtp_contract import validate
 
 
 BASELINE = '''    def send(self, msg):
+        if self.timeout is None:
+            server = smtplib.SMTP(self.host, self.port)
+        else:
+            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)
+
         if self.tls_context is None:
             server.starttls()
         elif sys.version_info[0] < 3:
@@ -69,6 +74,16 @@ if implementation_failures:
     )
 
 mutations = {
+    'timeout forwarding removed': mutate(
+        'timeout forwarding removed',
+        '            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)\n',
+        '            server = smtplib.SMTP(self.host, self.port)\n',
+    ),
+    'legacy no-timeout call removed': mutate(
+        'legacy no-timeout call removed',
+        '            server = smtplib.SMTP(self.host, self.port)\n',
+        '            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)\n',
+    ),
     'legacy TLS removed': mutate(
         'legacy TLS removed',
         '            server.starttls()\n',

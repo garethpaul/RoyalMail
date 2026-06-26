@@ -114,6 +114,10 @@ raises a clear runtime error instead of silently falling back to unverified
 legacy STARTTLS. Use Python 3 or an externally authenticated TLS tunnel when
 certificate verification is required.
 
+Callers can also set an SMTP connection timeout by passing `timeout=` to
+`RoyalMail` or `Manager`. The value is forwarded unchanged to `smtplib.SMTP`;
+omitting it preserves the legacy two-argument constructor call.
+
 ## Security and Privacy Notes
 
 - Review changes touching authentication or token handling; examples from the scan include royalmail.py.

@@ -24,6 +24,8 @@ Priority:
 - Start TLS whenever callers request `use_tls=True`
 - Forward caller-supplied TLS contexts on Python 3 and reject them explicitly
   on Python 2, where legacy `smtplib` cannot enforce that verification policy
+- Forward an explicit SMTP connection timeout on both runtimes while preserving
+  the legacy constructor call when callers omit the option
 - Keep SMTP connections closed on send or login failures
 - Preserve the primary SMTP failure when connection cleanup also fails
 - Surface partial recipient refusals instead of reporting incomplete delivery

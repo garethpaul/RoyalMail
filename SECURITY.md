@@ -57,6 +57,9 @@ policy. Python 3 callers can supply a trusted TLS context, which is forwarded
 unchanged to `SMTP.starttls(context=...)`; Python 2 rejects that option because
 its legacy `smtplib` cannot consume an `SSLContext` rather than silently
 downgrading the caller's verification request.
+Use the optional SMTP connection timeout for untrusted or failure-prone relays
+so a connection attempt cannot inherit an unbounded process-wide socket
+default. Omitting it preserves legacy behavior.
 SMTP cleanup should always be attempted, but a primary SMTP failure must remain
 visible if the server also fails while closing the connection. A failed SMTP
 QUIT exchange should fall back to direct socket close. Partial recipient

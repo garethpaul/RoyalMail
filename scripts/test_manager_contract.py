@@ -6,7 +6,12 @@ import os
 from manager_contract import validate
 
 
-BASELINE = '''    def _request_stop(self):
+BASELINE = '''    def __init__(self, **kwargs):
+        self.RoyalMail = RoyalMail(
+            timeout=kwargs.get('timeout', None),
+        )
+
+    def _request_stop(self):
         with self._state_lock:
             if self._stop_enqueued:
                 return
@@ -72,6 +77,11 @@ if implementation_failures:
     )
 
 mutations = {
+    'timeout forwarding removed': mutate(
+        'timeout forwarding removed',
+        "            timeout=kwargs.get('timeout', None),\n",
+        '',
+    ),
     'missing protected block': mutate('missing protected block', '            try:\n', ''),
     'truthy sentinel check': mutate('truthy sentinel check', 'if msg is None:', 'if msg:'),
     'continued sentinel': mutate('continued sentinel', '                    break', '                    continue'),
