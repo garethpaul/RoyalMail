@@ -94,13 +94,14 @@ class RoyalMail(object):
     """
 
     def __init__(self, host="localhost", port=0, use_tls=False, usr=None, pwd=None,
-                 tls_context=None):
+                 tls_context=None, timeout=None):
         self.host = host
         self.port = port
         self.use_tls = use_tls
         self._usr = usr
         self._pwd = pwd
         self.tls_context = tls_context
+        self.timeout = timeout
 
     def login(self, usr, pwd):
         self._usr = usr
@@ -115,7 +116,10 @@ class RoyalMail(object):
         them as a list:
         RoyalMail.send([msg1, msg2, msg3])
         """
-        server = smtplib.SMTP(self.host, self.port)
+        if self.timeout is None:
+            server = smtplib.SMTP(self.host, self.port)
+        else:
+            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)
 
         delivery_error = None
         try:
@@ -452,6 +456,7 @@ class Manager(threading.Thread):
                 usr=kwargs.get('usr', None),
                 pwd=kwargs.get('pwd', None),
                 tls_context=kwargs.get('tls_context', None),
+                timeout=kwargs.get('timeout', None),
             )
 
     def __getattr__(self, name):

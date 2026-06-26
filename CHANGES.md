@@ -1,5 +1,23 @@
 # Changes
 
+## 2026-06-26 10:04:57 PDT
+
+- Priority: reliability / bounded network setup.
+- Added an optional SMTP connection timeout and forwarded it through `Manager`
+  while preserving the exact legacy constructor call when omitted.
+- Files: `royalmail.py`, `tests/test_royalmail.py`, SMTP and Manager contract
+  harnesses, `docs/plans/2026-06-26-smtp-connect-timeout.md`, and synchronized
+  repository guidance.
+- Tests: 38 behavior tests pass on pinned Python 2.7.18 and Python 3.12.8;
+  19 workflow, 13 Manager, and 14 SMTP hostile mutations are rejected on both
+  runtimes; root and absolute external `make check` pass with 165 Make
+  authority cases.
+- Findings: no open pull requests or issues overlap this change.
+- Blockers: Codex review authentication may be unavailable and will be skipped
+  after one HTTP 401 attempt.
+- Next action: push the implementation, record exact hosted Python and CodeQL
+  evidence, then merge only the verified head.
+
 ## 2026-06-26
 
 - Added optional caller-supplied TLS context forwarding for authenticated

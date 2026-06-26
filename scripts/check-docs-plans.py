@@ -299,6 +299,8 @@ if os.path.isfile(ROYALMAIL_TESTS):
             'SMTPRecipientsRefused',
             'test_use_tls_forwards_caller_context_on_python3',
             'test_use_tls_rejects_context_on_python2_and_quits',
+            'test_send_forwards_explicit_smtp_timeout',
+            'self.assertEqual(12.5, manager.RoyalMail.timeout)',
             "self.assertIs(tls_context, manager.RoyalMail.tls_context)"):
         if fragment not in tests:
             failures.append('tests/test_royalmail.py must contain %s' % fragment)
@@ -318,13 +320,18 @@ for docs_file in ('README.md', 'VISION.md', 'SECURITY.md', 'CHANGES.md'):
         failures.append('%s must document primary SMTP failure preservation' % docs_file)
     if 'TLS context' not in docs:
         failures.append('%s must document explicit TLS context behavior' % docs_file)
+    if 'SMTP connection timeout' not in docs:
+        failures.append('%s must document optional SMTP connection timeout behavior' % docs_file)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     royalmail_source = read(ROYALMAIL_SOURCE)
     required_source_fragments = (
-        '                 tls_context=None):',
+        '                 tls_context=None, timeout=None):',
         '        self.tls_context = tls_context',
+        '        self.timeout = timeout',
+        '            server = smtplib.SMTP(self.host, self.port, timeout=self.timeout)',
         "                tls_context=kwargs.get('tls_context', None),",
+        "                timeout=kwargs.get('timeout', None),",
         'MIME_TOKEN_RE = re.compile(',
         "^[A-Za-z0-9!#$%&'*+.^_`|~-]+$",
         'len(parts) != 2',
