@@ -87,6 +87,17 @@ plans = sorted(glob.glob(os.path.join(DOCS_PLANS, '*.md')))
 if not plans:
     failures.append('docs/plans must contain at least one completed plan')
 
+# Keep tests/ closed-world. `unittest discover` imports every tests/test_*.py,
+# so an unreviewed module added beside the suite can rebind the assertion
+# mechanism for the whole run without editing any pinned file.
+EXPECTED_TEST_MODULES = ['test_royalmail.py']
+test_modules = sorted(
+    os.path.basename(path) for path in glob.glob(os.path.join(ROOT, 'tests', '*.py')))
+if test_modules != EXPECTED_TEST_MODULES:
+    failures.append(
+        'tests/ must contain exactly the reviewed modules %s, found %s'
+        % (', '.join(EXPECTED_TEST_MODULES), ', '.join(test_modules) or 'none'))
+
 for plan_path in plans:
     plan = read(plan_path)
     if 'Status: Completed' not in plan or 'make check' not in plan:

@@ -46,6 +46,12 @@ mechanism is not text in a pinned file.
   table instead of pinning prose about it, so reducing the harness to a success
   message fails verification and every planted defect must name a line
   `royalmail.py` actually ships.
+- Closed `tests/` to exactly the reviewed modules. `unittest discover` imports
+  every `tests/test_*.py`, so an unreviewed module beside the suite could rebind
+  the assertion mechanism for the whole run without editing any pinned file.
+  The closed-world check stops an added module; the harness stops an in-file
+  rebind, which no closed-world check can see. Neither control alone is
+  sufficient.
 - Added `test_rejects_trailing_newline_in_attachment_mimetype`. The harness
   surfaced this coverage gap: `MIME_TOKEN_RE` anchors with `$`, which matches
   before a trailing newline, so `text/plain\n` clears the token check and the
@@ -60,9 +66,17 @@ mechanism is not text in a pinned file.
 - `make check` and `make verify` additionally run the 165 Make authority cases;
   `check-python2` was not executed locally because Python 2.7 is unavailable
   outside the pinned container, and the hosted job covers it.
-- Attacked the new control: the shadow module that previously produced
-  `Ran 38 tests ... OK` at exit 0 now makes all 5 mutations survive, and the
-  harness fails with `hostile mutation survived the behavior suite`.
+- Attacked the new control. Every attack now fails closed:
+  - The shadow module that previously produced `Ran 38 tests ... OK` at exit 0 is
+    rejected by the closed-world check.
+  - An in-file `unittest.TestCase.run` rebind that keeps the suite green
+    (`Ran 39 tests ... OK` in 0.000s) and leaves `tests/` closed-world is caught
+    by construction: a disabled suite passes every mutant, so the harness fails
+    with `hostile mutation survived the behavior suite`.
+  - An in-file `assertRaises` rebind is caught by the clean-tree control.
+  - A shadow gated on the harness's copied tree diverging from the checkout can
+    stay dormant inside the harness, but the clean-tree control still runs the
+    current source with live assertions, so it cannot ship a defect.
 - Reducing the harness to its success message fails `check-docs-plans.py`.
 - No live SMTP relay or credentials were used.
 
