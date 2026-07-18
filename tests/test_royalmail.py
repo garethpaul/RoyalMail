@@ -576,6 +576,22 @@ class RoyalMailTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             message.as_string()
 
+    def test_rejects_trailing_newline_in_attachment_mimetype(self):
+        # MIME_TOKEN_RE anchors with '$', which matches before a trailing
+        # newline, so the explicit newline guard is the only defense against a
+        # trailing CR/LF smuggled into the Content-Type header.
+        for mimetype in ('text/plain\n', 'text/plain\r', 'text/plain\r\n'):
+            message = royalmail.Message(
+                To='to@example.com',
+                From='from@example.com',
+                Subject='Subject',
+                Body='Body',
+                attachments=[('missing.txt', None, mimetype)],
+            )
+
+            with self.assertRaises(ValueError):
+                message.as_string()
+
     def test_rejects_malformed_attachment_mimetype(self):
         invalid_mimetypes = (
             'text',

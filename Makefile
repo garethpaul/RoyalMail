@@ -53,11 +53,13 @@ contract-test-python2:
 	$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_workflow_contract.py
 	$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_manager_contract.py
 	$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_smtp_contract.py
+	$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_behavior_mutations.py
 
 contract-test-python3:
 	$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_workflow_contract.py
 	$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_manager_contract.py
 	$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_smtp_contract.py
+	$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_behavior_mutations.py
 
 contract-test: contract-test-python2 contract-test-python3
 
