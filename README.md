@@ -75,6 +75,10 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
   mutations that remove, duplicate, relocate, or bypass queue acknowledgement,
   stop signaling, or worker-error propagation. It also rejects SMTP mutations
   that hide refusal results, mask primary errors, or remove cleanup fallback.
+- `make check` plants hostile defects into a throwaway copy of the checkout and
+  requires the real behavior suite to reject every one of them, so a disabled or
+  bypassed suite fails verification instead of passing silently. See
+  [docs/plans/2026-07-18-behavior-suite-mutation-control.md](docs/plans/2026-07-18-behavior-suite-mutation-control.md).
 - `make check` also requires completed canonical plans under `docs/plans`.
 - `make check` runs with Python bytecode disabled and fails if `.pyc` or `.pyo`
   files are present in the checkout.

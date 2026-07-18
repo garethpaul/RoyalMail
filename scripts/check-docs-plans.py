@@ -6,6 +6,7 @@ import os
 import re
 import sys
 
+from test_behavior_mutations import MUTATIONS as BEHAVIOR_MUTATIONS
 from workflow_contract import validate as validate_workflow
 
 
@@ -41,6 +42,7 @@ MANAGER_CONTRACT = os.path.join(ROOT, 'scripts', 'manager_contract.py')
 MANAGER_CONTRACT_TEST = os.path.join(ROOT, 'scripts', 'test_manager_contract.py')
 SMTP_CONTRACT = os.path.join(ROOT, 'scripts', 'smtp_contract.py')
 SMTP_CONTRACT_TEST = os.path.join(ROOT, 'scripts', 'test_smtp_contract.py')
+BEHAVIOR_MUTATION_TEST = os.path.join(ROOT, 'scripts', 'test_behavior_mutations.py')
 
 
 def rel(path):
@@ -76,7 +78,8 @@ for required_path in (
         MANAGER_CONTRACT,
         MANAGER_CONTRACT_TEST,
         SMTP_CONTRACT,
-        SMTP_CONTRACT_TEST):
+        SMTP_CONTRACT_TEST,
+        BEHAVIOR_MUTATION_TEST):
     if not os.path.isfile(required_path):
         failures.append('%s is missing' % rel(required_path))
 
@@ -117,6 +120,8 @@ if os.path.isfile(MAKEFILE):
         '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_manager_contract.py',
         '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_smtp_contract.py',
         '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_smtp_contract.py',
+        '$(RUN_IN_REPO) $(PYTHON2) -B scripts/test_behavior_mutations.py',
+        '$(RUN_IN_REPO) $(PYTHON3) -B scripts/test_behavior_mutations.py',
         '$(PYTHON2) -B -m unittest discover -s tests',
         '$(PYTHON3) -B -m unittest discover -s tests',
         '$(RUN_IN_REPO) /bin/sh scripts/test-makefile-root.sh',
@@ -236,6 +241,21 @@ if os.path.isfile(DEEP_REVIEW_PLAN):
                 rel(DEEP_REVIEW_PLAN), evidence))
     if os.path.isfile(README) and rel(DEEP_REVIEW_PLAN) not in read(README):
         failures.append('README.md must reference %s' % rel(DEEP_REVIEW_PLAN))
+
+if os.path.isfile(ROYALMAIL_SOURCE):
+    # Derive this check from the harness's real mutation table rather than
+    # pinning prose about it. Reducing scripts/test_behavior_mutations.py to a
+    # success message removes MUTATIONS and fails here, and every planted
+    # defect must still name a line royalmail.py actually ships.
+    if len(BEHAVIOR_MUTATIONS) < 5:
+        failures.append(
+            'scripts/test_behavior_mutations.py must plant at least five hostile mutations')
+    behavior_source = read(ROYALMAIL_SOURCE)
+    for mutation_description, mutation_target, _mutation_replacement in BEHAVIOR_MUTATIONS:
+        if behavior_source.count(mutation_target) != 1:
+            failures.append(
+                'behavior mutation "%s" must target exactly one royalmail.py line'
+                % mutation_description)
 
 if os.path.isfile(ROYALMAIL_SOURCE):
     source = read(ROYALMAIL_SOURCE)
